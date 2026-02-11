@@ -22,6 +22,7 @@ class MockSupabaseClient(SupabaseClient):
             "prompt_versions": [],
             "prompt_branches": [],
             "prompt_usage_log": [],
+            "audit_log": [],
         }
 
     @property
@@ -95,6 +96,7 @@ def sample_content() -> dict[str, Any]:
 @pytest.fixture
 def app(mock_db):
     """FastAPI test app with mocked dependencies."""
+    from prompt_forge.core.audit import AuditLogger
     from prompt_forge.core.composer import CompositionEngine
     from prompt_forge.core.registry import PromptRegistry
     from prompt_forge.core.resolver import PromptResolver
@@ -104,9 +106,11 @@ def app(mock_db):
     registry = PromptRegistry(mock_db)
     vcs = VersionControl(mock_db)
     resolver = PromptResolver(mock_db)
-    composer = CompositionEngine(resolver)
+    composer = CompositionEngine(resolver, registry)
+    audit = AuditLogger(mock_db)
 
     # Override dependencies
+    from prompt_forge.core.audit import get_audit_logger
     from prompt_forge.core.registry import get_registry
     from prompt_forge.core.vcs import get_vcs
     from prompt_forge.core.resolver import get_resolver
@@ -118,6 +122,7 @@ def app(mock_db):
     _app.dependency_overrides[get_resolver] = lambda: resolver
     _app.dependency_overrides[get_composer] = lambda: composer
     _app.dependency_overrides[get_supabase_client] = lambda: mock_db
+    _app.dependency_overrides[get_audit_logger] = lambda: audit
 
     yield _app
 

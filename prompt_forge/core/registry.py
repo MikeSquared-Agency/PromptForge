@@ -28,12 +28,19 @@ class PromptRegistry:
         metadata: dict[str, Any] | None = None,
         content: dict[str, Any] | None = None,
         initial_message: str = "Initial version",
+        parent_slug: str | None = None,
     ) -> dict[str, Any]:
         """Create a new prompt. Optionally creates an initial version."""
         # Check for duplicate slug
         existing = self.db.select("prompts", filters={"slug": slug})
         if existing:
             raise ValueError(f"Prompt with slug '{slug}' already exists")
+
+        # Validate parent exists if specified
+        if parent_slug:
+            parent = self.db.select("prompts", filters={"slug": parent_slug})
+            if not parent:
+                raise ValueError(f"Parent prompt '{parent_slug}' not found")
 
         prompt = self.db.insert(
             "prompts",
@@ -45,6 +52,7 @@ class PromptRegistry:
                 "tags": tags or [],
                 "metadata": metadata or {},
                 "archived": False,
+                "parent_slug": parent_slug,
             },
         )
 
@@ -59,6 +67,7 @@ class PromptRegistry:
                     "message": initial_message,
                     "author": "system",
                     "branch": "main",
+                    "override_sections": {},
                 },
             )
 
@@ -117,6 +126,78 @@ class PromptRegistry:
         self.db.update("prompts", prompt["id"], {"archived": True})
         logger.info("prompt.archived", slug=slug)
         return True
+
+    def get_prompt_chain(self, slug: str) -> list[dict[str, Any]]:
+        """Return the full inheritance chain (child → parent → grandparent).
+
+        Raises ValueError on circular inheritance.
+        """
+        chain: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        current_slug: str | None = slug
+
+        while current_slug:
+            if current_slug in seen:
+                raise ValueError(
+                    f"Circular inheritance detected: {' → '.join(s['slug'] for s in chain)} → {current_slug}"
+                )
+            seen.add(current_slug)
+
+            prompt = self.get_prompt(current_slug)
+            if not prompt:
+                raise ValueError(f"Prompt '{current_slug}' not found in inheritance chain")
+
+            chain.append(prompt)
+            current_slug = prompt.get("parent_slug")
+
+        return chain
+
+    def get_effective_content(
+        self,
+        slug: str,
+        branch: str = "main",
+        version: int | None = None,
+    ) -> dict[str, Any]:
+        """Resolve inheritance by merging parent content with child overrides.
+
+        Child sections override parent; parent sections not in child are inherited.
+        """
+        chain = self.get_prompt_chain(slug)
+
+        # Resolve content for each prompt in the chain
+        from prompt_forge.core.vcs import VersionControl
+        vcs = VersionControl(self.db)
+
+        # Build merged content starting from the root ancestor
+        merged_sections: dict[str, dict[str, Any]] = {}
+        merged_variables: dict[str, Any] = {}
+        merged_metadata: dict[str, Any] = {}
+
+        # Process from root (last) to child (first)
+        for prompt in reversed(chain):
+            prompt_id = str(prompt["id"])
+
+            if version is not None and prompt["slug"] == slug:
+                ver = vcs.get_version(prompt_id, version, branch)
+            else:
+                # Get latest version
+                history = vcs.history(prompt_id, branch, limit=1)
+                ver = history[0] if history else None
+
+            if not ver:
+                continue
+
+            content = ver["content"]
+            for section in content.get("sections", []):
+                merged_sections[section["id"]] = section
+            merged_variables.update(content.get("variables", {}))
+            merged_metadata.update(content.get("metadata", {}))
+
+        return {
+            "sections": list(merged_sections.values()),
+            "variables": merged_variables,
+            "metadata": merged_metadata,
+        }
 
 
 @lru_cache

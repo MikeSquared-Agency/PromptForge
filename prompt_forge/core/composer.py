@@ -9,6 +9,7 @@ from typing import Any
 
 import structlog
 
+from prompt_forge.core.registry import PromptRegistry
 from prompt_forge.core.resolver import PromptResolver, get_resolver
 
 logger = structlog.get_logger()
@@ -17,8 +18,9 @@ logger = structlog.get_logger()
 class CompositionEngine:
     """Composes agent prompts from reusable components."""
 
-    def __init__(self, resolver: PromptResolver) -> None:
+    def __init__(self, resolver: PromptResolver, registry: PromptRegistry | None = None) -> None:
         self.resolver = resolver
+        self.registry = registry
 
     def compose(
         self,
@@ -42,7 +44,7 @@ class CompositionEngine:
         components: list[dict[str, Any]] = []
         sections: list[str] = []
 
-        # Resolve persona
+        # Resolve persona (with inheritance if registry available)
         persona_version = self.resolver.resolve(
             slug=persona_slug, branch=branch, strategy=strategy
         )
@@ -52,7 +54,11 @@ class CompositionEngine:
             "version": persona_version["version"],
             "branch": branch,
         })
-        sections.append(self._extract_text(persona_version["content"], "persona"))
+        if self.registry:
+            effective = self.registry.get_effective_content(persona_slug, branch)
+            sections.append(self._extract_text(effective, "persona"))
+        else:
+            sections.append(self._extract_text(persona_version["content"], "persona"))
 
         # Resolve skills
         for slug in skill_slugs:
@@ -64,7 +70,11 @@ class CompositionEngine:
                     "version": version["version"],
                     "branch": branch,
                 })
-                sections.append(self._extract_text(version["content"], "skill"))
+                if self.registry:
+                    effective = self.registry.get_effective_content(slug, branch)
+                    sections.append(self._extract_text(effective, "skill"))
+                else:
+                    sections.append(self._extract_text(version["content"], "skill"))
             except Exception as e:
                 warnings.append(f"Failed to resolve skill '{slug}': {e}")
 
@@ -78,7 +88,11 @@ class CompositionEngine:
                     "version": version["version"],
                     "branch": branch,
                 })
-                sections.append(self._extract_text(version["content"], "constraint"))
+                if self.registry:
+                    effective = self.registry.get_effective_content(slug, branch)
+                    sections.append(self._extract_text(effective, "constraint"))
+                else:
+                    sections.append(self._extract_text(version["content"], "constraint"))
             except Exception as e:
                 warnings.append(f"Failed to resolve constraint '{slug}': {e}")
 
@@ -160,4 +174,5 @@ class CompositionEngine:
 @lru_cache
 def get_composer() -> CompositionEngine:
     """Get cached composer instance."""
-    return CompositionEngine(get_resolver())
+    from prompt_forge.core.registry import get_registry
+    return CompositionEngine(get_resolver(), get_registry())

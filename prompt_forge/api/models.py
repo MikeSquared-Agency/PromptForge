@@ -21,6 +21,7 @@ class PromptCreate(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     content: dict[str, Any] | None = None
     initial_message: str = "Initial version"
+    parent_slug: str | None = None
 
 
 class PromptUpdate(BaseModel):
@@ -43,6 +44,7 @@ class PromptResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     archived: bool
+    parent_slug: str | None = None
 
 
 # --- Versions ---
@@ -53,6 +55,7 @@ class VersionCreate(BaseModel):
     message: str = "Update"
     author: str = "system"
     branch: str = "main"
+    override_sections: dict[str, Any] | None = None
 
 
 class VersionResponse(BaseModel):
@@ -124,6 +127,46 @@ class ResolveRequest(BaseModel):
     branch: str = "main"
     version: int | None = None
     strategy: str = "latest"
+
+
+# --- Usage ---
+
+# --- Scanning ---
+
+class ScanRequest(BaseModel):
+    """Scan content for injection attempts."""
+    content: dict[str, Any]
+    sensitivity: str = "normal"
+
+
+class FindingResponse(BaseModel):
+    """A single scan finding."""
+    pattern_name: str
+    matched_text: str
+    location: str
+    severity: str
+    description: str
+
+
+class ScanResponse(BaseModel):
+    """Scan result."""
+    clean: bool
+    findings: list[FindingResponse] = Field(default_factory=list)
+    risk_level: str
+
+
+# --- Audit ---
+
+class AuditEntryResponse(BaseModel):
+    """Audit log entry."""
+    id: UUID
+    action: str
+    entity_type: str
+    entity_id: UUID | None
+    actor: str
+    details: dict[str, Any]
+    ip_address: str | None
+    created_at: datetime
 
 
 # --- Usage ---

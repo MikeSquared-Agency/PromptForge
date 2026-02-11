@@ -26,6 +26,7 @@ async def create_prompt(
             metadata=data.metadata,
             content=data.content,
             initial_message=data.initial_message,
+            parent_slug=data.parent_slug,
         )
         return PromptResponse(**prompt)
     except ValueError as e:

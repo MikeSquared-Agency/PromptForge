@@ -7,6 +7,7 @@ from typing import Any
 
 import structlog
 
+from prompt_forge.core.scanner import PromptScanner
 from prompt_forge.db.client import SupabaseClient, get_supabase_client
 
 logger = structlog.get_logger()
@@ -17,6 +18,7 @@ class VersionControl:
 
     def __init__(self, db: SupabaseClient) -> None:
         self.db = db
+        self.scanner = PromptScanner()
 
     def commit(
         self,
@@ -26,7 +28,19 @@ class VersionControl:
         author: str = "system",
         branch: str = "main",
     ) -> dict[str, Any]:
-        """Create a new version (commit) of a prompt."""
+        """Create a new version (commit) of a prompt.
+
+        Scans content for injection attempts before committing.
+        Critical findings will raise an error. Medium/high findings
+        are included as warnings in the response.
+        """
+        # Scan for injection attempts
+        scan_result = self.scanner.scan(content)
+        if scan_result.risk_level == "critical":
+            finding_details = "; ".join(
+                f"{f.pattern_name}: {f.description}" for f in scan_result.findings
+            )
+            raise ValueError(f"Critical injection findings detected: {finding_details}")
         # Get current head for this prompt+branch
         history = self.db.select(
             "prompt_versions",
@@ -62,6 +76,14 @@ class VersionControl:
             branch=branch,
             author=author,
         )
+
+        # Attach scan warnings if any
+        if scan_result.findings:
+            version["scan_warnings"] = [
+                {"pattern": f.pattern_name, "severity": f.severity, "description": f.description}
+                for f in scan_result.findings
+            ]
+
         return version
 
     def history(
