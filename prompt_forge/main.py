@@ -27,7 +27,23 @@ async def lifespan(app: FastAPI):
     get_supabase_client()
     logger.info("promptforge.supabase_connected")
 
+    # Initialize NATS event publisher (optional)
+    try:
+        from prompt_forge.core.events import get_event_publisher
+        publisher = get_event_publisher()
+        await publisher.connect()
+    except Exception as e:
+        logger.info("promptforge.nats_skipped", reason=str(e))
+
     yield
+
+    # Disconnect NATS
+    try:
+        from prompt_forge.core.events import get_event_publisher
+        publisher = get_event_publisher()
+        await publisher.disconnect()
+    except Exception:
+        pass
 
     logger.info("promptforge.shutdown")
 
