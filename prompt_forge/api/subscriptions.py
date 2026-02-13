@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
@@ -53,13 +52,18 @@ async def subscribe(
     prompt = _get_prompt_or_404(slug, registry)
     # Upsert
     existing = [
-        r for r in db.select("prompt_subscriptions", filters={"prompt_id": prompt["id"]})
+        r
+        for r in db.select("prompt_subscriptions", filters={"prompt_id": prompt["id"]})
         if r["agent_id"] == x_agent_id
     ]
     if existing:
-        updated = db.update("prompt_subscriptions", existing[0]["id"], {
-            "last_pulled_at": datetime.now(timezone.utc).isoformat(),
-        })
+        updated = db.update(
+            "prompt_subscriptions",
+            existing[0]["id"],
+            {
+                "last_pulled_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
         return SubscriptionResponse(
             id=str(updated["id"]),
             prompt_id=str(updated["prompt_id"]),
@@ -67,11 +71,14 @@ async def subscribe(
             subscribed_at=str(updated.get("subscribed_at", updated.get("created_at", ""))),
             last_pulled_at=str(updated.get("last_pulled_at", updated.get("created_at", ""))),
         )
-    
-    sub = db.insert("prompt_subscriptions", {
-        "prompt_id": prompt["id"],
-        "agent_id": x_agent_id,
-    })
+
+    sub = db.insert(
+        "prompt_subscriptions",
+        {
+            "prompt_id": prompt["id"],
+            "agent_id": x_agent_id,
+        },
+    )
     return SubscriptionResponse(
         id=str(sub["id"]),
         prompt_id=str(sub["prompt_id"]),
@@ -90,7 +97,8 @@ async def unsubscribe(
 ) -> None:
     prompt = _get_prompt_or_404(slug, registry)
     existing = [
-        r for r in db.select("prompt_subscriptions", filters={"prompt_id": prompt["id"]})
+        r
+        for r in db.select("prompt_subscriptions", filters={"prompt_id": prompt["id"]})
         if r["agent_id"] == x_agent_id
     ]
     if not existing:

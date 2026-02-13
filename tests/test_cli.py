@@ -35,9 +35,9 @@ class TestPromptCommands:
 
     def test_prompt_create(self, runner, mock_client):
         mock_client.create_prompt.return_value = {"slug": "new-prompt", "name": "New"}
-        result = runner.invoke(cli, [
-            "prompt", "create", "--slug", "new-prompt", "--name", "New", "--type", "persona"
-        ])
+        result = runner.invoke(
+            cli, ["prompt", "create", "--slug", "new-prompt", "--name", "New", "--type", "persona"]
+        )
         assert result.exit_code == 0
         mock_client.create_prompt.assert_called_once()
 
@@ -57,7 +57,13 @@ class TestPromptCommands:
 class TestVersionCommands:
     def test_version_history(self, runner, mock_client):
         mock_client.list_versions.return_value = [
-            {"version": 1, "message": "init", "author": "sys", "branch": "main", "created_at": "2025-01-01"}
+            {
+                "version": 1,
+                "message": "init",
+                "author": "sys",
+                "branch": "main",
+                "created_at": "2025-01-01",
+            }
         ]
         result = runner.invoke(cli, ["version", "history", "test"])
         assert result.exit_code == 0

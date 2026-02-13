@@ -9,20 +9,27 @@ class TestUsageAnalytics:
         """Create a prompt and seed usage data via mock_db directly."""
         registry = PromptRegistry(mock_db)
         vcs = VersionControl(mock_db)
-        prompt = registry.create_prompt(slug="analytics-test", name="Analytics Test", type="persona")
-        version = vcs.commit(str(prompt["id"]), {"sections": [], "variables": {}, "metadata": {}}, "v1", "author")
+        prompt = registry.create_prompt(
+            slug="analytics-test", name="Analytics Test", type="persona"
+        )
+        version = vcs.commit(
+            str(prompt["id"]), {"sections": [], "variables": {}, "metadata": {}}, "v1", "author"
+        )
 
         for i in range(5):
-            mock_db.insert("prompt_usage_log", {
-                "prompt_id": str(prompt["id"]),
-                "version_id": version["id"],
-                "agent_id": f"agent-{i}",
-                "outcome": "success" if i < 3 else "failure",
-                "latency_ms": 100 + i * 50,
-                "composition_manifest": None,
-                "feedback": None,
-                "resolved_at": "2026-02-12T00:00:00Z",
-            })
+            mock_db.insert(
+                "prompt_usage_log",
+                {
+                    "prompt_id": str(prompt["id"]),
+                    "version_id": version["id"],
+                    "agent_id": f"agent-{i}",
+                    "outcome": "success" if i < 3 else "failure",
+                    "latency_ms": 100 + i * 50,
+                    "composition_manifest": None,
+                    "feedback": None,
+                    "resolved_at": "2026-02-12T00:00:00Z",
+                },
+            )
 
         return str(prompt["id"]), version["id"]
 

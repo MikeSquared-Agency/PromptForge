@@ -9,9 +9,14 @@ class TestPatchWorkflow:
     """Agent uses PATCH to safely add fields without nuking content."""
 
     def _setup_persona(self, client):
-        client.post("/api/v1/prompts", json={
-            "slug": "kai-soul", "name": "Kai Soul", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "kai-soul",
+                "name": "Kai Soul",
+                "type": "persona",
+            },
+        )
         content = {
             "identity": "You are Kai, an AI assistant for deep conversations.",
             "voice": "Warm, curious, empathetic. Uses metaphors.",
@@ -20,9 +25,14 @@ class TestPatchWorkflow:
             "constraints": ["No medical advice", "No legal advice"],
             "capabilities": "Deep conversation, emotional support, creative writing.",
         }
-        resp = client.post("/api/v1/prompts/kai-soul/versions", json={
-            "content": content, "message": "Initial soul definition", "author": "mike",
-        })
+        resp = client.post(
+            "/api/v1/prompts/kai-soul/versions",
+            json={
+                "content": content,
+                "message": "Initial soul definition",
+                "author": "mike",
+            },
+        )
         assert resp.status_code == 201
         return content
 
@@ -30,14 +40,17 @@ class TestPatchWorkflow:
         """An agent adds Slack config without touching the soul fields."""
         original = self._setup_persona(client)
 
-        resp = client.patch("/api/v1/prompts/kai-soul/versions", json={
-            "content": {
-                "slack_identity": "Slack User ID: U0AE9ME4SNB",
-                "slack_rules": "Always append footer with emoji.",
+        resp = client.patch(
+            "/api/v1/prompts/kai-soul/versions",
+            json={
+                "content": {
+                    "slack_identity": "Slack User ID: U0AE9ME4SNB",
+                    "slack_rules": "Always append footer with emoji.",
+                },
+                "message": "Add Slack identity and rules",
+                "author": "kai",
             },
-            "message": "Add Slack identity and rules",
-            "author": "kai",
-        })
+        )
         assert resp.status_code == 201
         v2 = resp.json()
         assert v2["version"] == 2
@@ -55,12 +68,22 @@ class TestPatchWorkflow:
         """Multiple PATCH calls accumulate fields."""
         self._setup_persona(client)
 
-        client.patch("/api/v1/prompts/kai-soul/versions", json={
-            "content": {"slack_identity": "U123"}, "message": "Add slack", "author": "kai",
-        })
-        resp = client.patch("/api/v1/prompts/kai-soul/versions", json={
-            "content": {"discord_identity": "kai#1234"}, "message": "Add discord", "author": "kai",
-        })
+        client.patch(
+            "/api/v1/prompts/kai-soul/versions",
+            json={
+                "content": {"slack_identity": "U123"},
+                "message": "Add slack",
+                "author": "kai",
+            },
+        )
+        resp = client.patch(
+            "/api/v1/prompts/kai-soul/versions",
+            json={
+                "content": {"discord_identity": "kai#1234"},
+                "message": "Add discord",
+                "author": "kai",
+            },
+        )
         assert resp.status_code == 201
         v3 = resp.json()
         assert v3["version"] == 3
@@ -72,23 +95,35 @@ class TestPatchWorkflow:
         """PATCH can update a field's value."""
         self._setup_persona(client)
 
-        resp = client.patch("/api/v1/prompts/kai-soul/versions", json={
-            "content": {"voice": "Formal and precise. Avoids metaphors."},
-            "message": "Change voice to formal",
-            "author": "mike",
-        })
+        resp = client.patch(
+            "/api/v1/prompts/kai-soul/versions",
+            json={
+                "content": {"voice": "Formal and precise. Avoids metaphors."},
+                "message": "Change voice to formal",
+                "author": "mike",
+            },
+        )
         assert resp.status_code == 201
         assert resp.json()["content"]["voice"] == "Formal and precise. Avoids metaphors."
         assert resp.json()["content"]["identity"].startswith("You are Kai")
 
     def test_patch_no_versions_returns_404(self, client):
         """PATCH on a prompt with no versions gives clear error."""
-        client.post("/api/v1/prompts", json={
-            "slug": "empty-prompt", "name": "Empty", "type": "persona",
-        })
-        resp = client.patch("/api/v1/prompts/empty-prompt/versions", json={
-            "content": {"a": "b"}, "message": "patch",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "empty-prompt",
+                "name": "Empty",
+                "type": "persona",
+            },
+        )
+        resp = client.patch(
+            "/api/v1/prompts/empty-prompt/versions",
+            json={
+                "content": {"a": "b"},
+                "message": "patch",
+            },
+        )
         assert resp.status_code == 404
         assert "use post" in resp.json()["detail"].lower()
 
@@ -97,9 +132,14 @@ class TestRegressionGuardE2E:
     """Regression guard prevents accidental content loss end-to-end."""
 
     def _setup_with_content(self, client):
-        client.post("/api/v1/prompts", json={
-            "slug": "guarded", "name": "Guarded", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "guarded",
+                "name": "Guarded",
+                "type": "persona",
+            },
+        )
         content = {
             "identity": "Deep identity description " * 10,
             "voice": "Voice style " * 10,
@@ -108,20 +148,28 @@ class TestRegressionGuardE2E:
             "constraints": ["C1", "C2", "C3"],
             "capabilities": "Many capabilities " * 10,
         }
-        client.post("/api/v1/prompts/guarded/versions", json={
-            "content": content, "message": "v1", "author": "mike",
-        })
+        client.post(
+            "/api/v1/prompts/guarded/versions",
+            json={
+                "content": content,
+                "message": "v1",
+                "author": "mike",
+            },
+        )
         return content
 
     def test_post_with_missing_fields_blocked(self, client):
         """POST that drops most fields is blocked."""
         self._setup_with_content(client)
 
-        resp = client.post("/api/v1/prompts/guarded/versions", json={
-            "content": {"slack_id": "U123"},
-            "message": "Oops, only sent new field",
-            "author": "kai",
-        })
+        resp = client.post(
+            "/api/v1/prompts/guarded/versions",
+            json={
+                "content": {"slack_id": "U123"},
+                "message": "Oops, only sent new field",
+                "author": "kai",
+            },
+        )
         assert resp.status_code == 409
         detail = resp.json()["detail"]
         assert detail["error"] == "content_regression_blocked"
@@ -132,41 +180,65 @@ class TestRegressionGuardE2E:
         """POST with acknowledge_reduction: true bypasses the guard."""
         self._setup_with_content(client)
 
-        resp = client.post("/api/v1/prompts/guarded/versions", json={
-            "content": {"slack_id": "U123"},
-            "message": "Intentional rewrite",
-            "author": "mike",
-            "acknowledge_reduction": True,
-        })
+        resp = client.post(
+            "/api/v1/prompts/guarded/versions",
+            json={
+                "content": {"slack_id": "U123"},
+                "message": "Intentional rewrite",
+                "author": "mike",
+                "acknowledge_reduction": True,
+            },
+        )
         assert resp.status_code == 201
         assert resp.json()["warnings"] is not None
         assert len(resp.json()["warnings"]) > 0
 
     def test_first_version_never_blocked(self, client):
         """First version of a prompt should never trigger regression guard."""
-        client.post("/api/v1/prompts", json={
-            "slug": "brand-new", "name": "New", "type": "persona",
-        })
-        resp = client.post("/api/v1/prompts/brand-new/versions", json={
-            "content": {"identity": "I am new"},
-            "message": "first",
-            "author": "mike",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "brand-new",
+                "name": "New",
+                "type": "persona",
+            },
+        )
+        resp = client.post(
+            "/api/v1/prompts/brand-new/versions",
+            json={
+                "content": {"identity": "I am new"},
+                "message": "first",
+                "author": "mike",
+            },
+        )
         assert resp.status_code == 201
         assert resp.json()["warnings"] is None
 
     def test_identical_content_no_warning(self, client):
         """Posting same content again should not trigger warnings."""
         content = {"identity": "Same", "voice": "Same"}
-        client.post("/api/v1/prompts", json={
-            "slug": "stable", "name": "Stable", "type": "persona",
-        })
-        client.post("/api/v1/prompts/stable/versions", json={
-            "content": content, "message": "v1",
-        })
-        resp = client.post("/api/v1/prompts/stable/versions", json={
-            "content": content, "message": "v2",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "stable",
+                "name": "Stable",
+                "type": "persona",
+            },
+        )
+        client.post(
+            "/api/v1/prompts/stable/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
+        resp = client.post(
+            "/api/v1/prompts/stable/versions",
+            json={
+                "content": content,
+                "message": "v2",
+            },
+        )
         assert resp.status_code == 201
         assert resp.json()["warnings"] is None
 
@@ -174,10 +246,13 @@ class TestRegressionGuardE2E:
         """The 409 response includes actionable diff information."""
         self._setup_with_content(client)
 
-        resp = client.post("/api/v1/prompts/guarded/versions", json={
-            "content": {"identity": "short"},
-            "message": "bad update",
-        })
+        resp = client.post(
+            "/api/v1/prompts/guarded/versions",
+            json={
+                "content": {"identity": "short"},
+                "message": "bad update",
+            },
+        )
         assert resp.status_code == 409
         diff = resp.json()["detail"]["diff"]
         assert "keys_removed" in diff
@@ -192,17 +267,31 @@ class TestFieldDiffE2E:
     """Diff endpoint for debugging version changes."""
 
     def _create_versions(self, client):
-        client.post("/api/v1/prompts", json={
-            "slug": "diffable", "name": "D", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "diffable",
+                "name": "D",
+                "type": "persona",
+            },
+        )
         v1 = {"identity": "Kai v1", "voice": "Warm", "principles": ["Be kind"]}
         v2 = {"identity": "Kai v2", "voice": "Warm", "slack_id": "U123"}
-        client.post("/api/v1/prompts/diffable/versions", json={
-            "content": v1, "message": "v1",
-        })
-        client.post("/api/v1/prompts/diffable/versions", json={
-            "content": v2, "message": "v2", "acknowledge_reduction": True,
-        })
+        client.post(
+            "/api/v1/prompts/diffable/versions",
+            json={
+                "content": v1,
+                "message": "v1",
+            },
+        )
+        client.post(
+            "/api/v1/prompts/diffable/versions",
+            json={
+                "content": v2,
+                "message": "v2",
+                "acknowledge_reduction": True,
+            },
+        )
 
     def test_diff_shows_all_change_types(self, client):
         self._create_versions(client)
@@ -243,9 +332,14 @@ class TestRestoreE2E:
 
     def _setup_with_loss(self, client):
         """Create v1 (full), v2 (broken) to simulate accidental nuke."""
-        client.post("/api/v1/prompts", json={
-            "slug": "restore-me", "name": "R", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "restore-me",
+                "name": "R",
+                "type": "persona",
+            },
+        )
         full = {
             "identity": "Full identity with lots of detail.",
             "voice": "Warm and empathetic.",
@@ -256,20 +350,34 @@ class TestRestoreE2E:
             "identity": "Short.",
             "slack_id": "U123",
         }
-        client.post("/api/v1/prompts/restore-me/versions", json={
-            "content": full, "message": "v1 - complete soul", "author": "mike",
-        })
-        client.post("/api/v1/prompts/restore-me/versions", json={
-            "content": broken, "message": "v2 - oops", "acknowledge_reduction": True,
-        })
+        client.post(
+            "/api/v1/prompts/restore-me/versions",
+            json={
+                "content": full,
+                "message": "v1 - complete soul",
+                "author": "mike",
+            },
+        )
+        client.post(
+            "/api/v1/prompts/restore-me/versions",
+            json={
+                "content": broken,
+                "message": "v2 - oops",
+                "acknowledge_reduction": True,
+            },
+        )
         return full
 
     def test_restore_exact(self, client):
         """Restore v1 exactly, creating v3."""
         full = self._setup_with_loss(client)
-        resp = client.post("/api/v1/prompts/restore-me/versions/restore", json={
-            "from_version": 1, "author": "mike",
-        })
+        resp = client.post(
+            "/api/v1/prompts/restore-me/versions/restore",
+            json={
+                "from_version": 1,
+                "author": "mike",
+            },
+        )
         assert resp.status_code == 201
         assert resp.json()["version"] == 3
         assert resp.json()["content"] == full
@@ -277,12 +385,15 @@ class TestRestoreE2E:
     def test_restore_with_merge(self, client):
         """Restore v1 + merge v2's Slack field."""
         full = self._setup_with_loss(client)
-        resp = client.post("/api/v1/prompts/restore-me/versions/restore", json={
-            "from_version": 1,
-            "patch": {"slack_id": "U123"},
-            "message": "Restore v1 + Slack config",
-            "author": "mike",
-        })
+        resp = client.post(
+            "/api/v1/prompts/restore-me/versions/restore",
+            json={
+                "from_version": 1,
+                "patch": {"slack_id": "U123"},
+                "message": "Restore v1 + Slack config",
+                "author": "mike",
+            },
+        )
         assert resp.status_code == 201
         v3 = resp.json()
         # All v1 fields present
@@ -293,17 +404,23 @@ class TestRestoreE2E:
 
     def test_restore_nonexistent_version_404(self, client):
         self._setup_with_loss(client)
-        resp = client.post("/api/v1/prompts/restore-me/versions/restore", json={
-            "from_version": 99,
-        })
+        resp = client.post(
+            "/api/v1/prompts/restore-me/versions/restore",
+            json={
+                "from_version": 99,
+            },
+        )
         assert resp.status_code == 404
 
     def test_restore_default_message(self, client):
         """Default message includes the source version number."""
         self._setup_with_loss(client)
-        resp = client.post("/api/v1/prompts/restore-me/versions/restore", json={
-            "from_version": 1,
-        })
+        resp = client.post(
+            "/api/v1/prompts/restore-me/versions/restore",
+            json={
+                "from_version": 1,
+            },
+        )
         assert "version 1" in resp.json()["message"].lower()
 
 
@@ -319,9 +436,14 @@ class TestFullAgentWorkflow:
         5. Agent patches voice update (v3) — everything still intact
         """
         # Step 1: Create full persona
-        client.post("/api/v1/prompts", json={
-            "slug": "kai", "name": "Kai", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "kai",
+                "name": "Kai",
+                "type": "persona",
+            },
+        )
         soul = {
             "identity": "You are Kai, an AI persona for deep conversations.",
             "voice": "Warm, curious, uses metaphors and asks probing questions.",
@@ -330,21 +452,29 @@ class TestFullAgentWorkflow:
             "constraints": ["No medical advice", "No legal advice", "No financial advice"],
             "capabilities": "Deep conversation, emotional support, creative writing.",
         }
-        r1 = client.post("/api/v1/prompts/kai/versions", json={
-            "content": soul, "message": "Initial soul", "author": "mike",
-        })
+        r1 = client.post(
+            "/api/v1/prompts/kai/versions",
+            json={
+                "content": soul,
+                "message": "Initial soul",
+                "author": "mike",
+            },
+        )
         assert r1.status_code == 201
         assert r1.json()["version"] == 1
 
         # Step 2: Agent PATCHes in Slack fields
-        r2 = client.patch("/api/v1/prompts/kai/versions", json={
-            "content": {
-                "slack_identity": "Slack User ID: U0AE9ME4SNB",
-                "slack_rules": "Always append footer with kaomoji.",
+        r2 = client.patch(
+            "/api/v1/prompts/kai/versions",
+            json={
+                "content": {
+                    "slack_identity": "Slack User ID: U0AE9ME4SNB",
+                    "slack_rules": "Always append footer with kaomoji.",
+                },
+                "message": "Add Slack identity and rules",
+                "author": "kai",
             },
-            "message": "Add Slack identity and rules",
-            "author": "kai",
-        })
+        )
         assert r2.status_code == 201
         assert r2.json()["version"] == 2
         v2_content = r2.json()["content"]
@@ -356,14 +486,17 @@ class TestFullAgentWorkflow:
         assert "slack_identity" in v2_content
 
         # Step 3: Bad agent tries full POST with only Slack fields
-        r3 = client.post("/api/v1/prompts/kai/versions", json={
-            "content": {
-                "slack_identity": "Slack User ID: U0AE9ME4SNB",
-                "slack_rules": "Always append footer with kaomoji.",
+        r3 = client.post(
+            "/api/v1/prompts/kai/versions",
+            json={
+                "content": {
+                    "slack_identity": "Slack User ID: U0AE9ME4SNB",
+                    "slack_rules": "Always append footer with kaomoji.",
+                },
+                "message": "Updating Slack config",
+                "author": "bad-agent",
             },
-            "message": "Updating Slack config",
-            "author": "bad-agent",
-        })
+        )
         assert r3.status_code == 409
         assert r3.json()["detail"]["error"] == "content_regression_blocked"
 
@@ -378,11 +511,14 @@ class TestFullAgentWorkflow:
         assert diff["summary"]["added"] == 2
 
         # Step 5: Agent patches a voice update
-        r5 = client.patch("/api/v1/prompts/kai/versions", json={
-            "content": {"voice": "Formal and precise. Avoids colloquialisms."},
-            "message": "Shift to formal voice",
-            "author": "kai",
-        })
+        r5 = client.patch(
+            "/api/v1/prompts/kai/versions",
+            json={
+                "content": {"voice": "Formal and precise. Avoids colloquialisms."},
+                "message": "Shift to formal voice",
+                "author": "kai",
+            },
+        )
         assert r5.status_code == 201
         assert r5.json()["version"] == 3
         v3_content = r5.json()["content"]

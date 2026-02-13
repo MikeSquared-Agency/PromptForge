@@ -106,37 +106,41 @@ def regression_check(
     else:
         content_reduction_pct = 0.0
 
-    keys_removed_pct = (
-        (len(keys_removed) / len(parent_keys) * 100) if parent_keys else 0.0
-    )
+    keys_removed_pct = (len(keys_removed) / len(parent_keys) * 100) if parent_keys else 0.0
 
     # Build warnings list
     warnings: list[dict[str, Any]] = []
     if keys_removed:
-        warnings.append({
-            "type": "keys_removed",
-            "detail": keys_removed,
-            "message": f"{len(keys_removed)} keys from parent version were removed",
-        })
+        warnings.append(
+            {
+                "type": "keys_removed",
+                "detail": keys_removed,
+                "message": f"{len(keys_removed)} keys from parent version were removed",
+            }
+        )
     if fields_emptied:
-        warnings.append({
-            "type": "fields_emptied",
-            "detail": fields_emptied,
-            "message": f"{len(fields_emptied)} fields were emptied",
-        })
+        warnings.append(
+            {
+                "type": "fields_emptied",
+                "detail": fields_emptied,
+                "message": f"{len(fields_emptied)} fields were emptied",
+            }
+        )
     if content_reduction_pct > 20:
-        warnings.append({
-            "type": "content_reduction",
-            "detail": {
-                "parent_chars": parent_chars,
-                "new_chars": new_chars,
-                "reduction_pct": content_reduction_pct,
-            },
-            "message": (
-                f"Content reduced by {content_reduction_pct}%. "
-                "Pass acknowledge_reduction: true if intentional."
-            ),
-        })
+        warnings.append(
+            {
+                "type": "content_reduction",
+                "detail": {
+                    "parent_chars": parent_chars,
+                    "new_chars": new_chars,
+                    "reduction_pct": content_reduction_pct,
+                },
+                "message": (
+                    f"Content reduced by {content_reduction_pct}%. "
+                    "Pass acknowledge_reduction: true if intentional."
+                ),
+            }
+        )
 
     warn = bool(keys_removed) or content_reduction_pct > 20
     block = content_reduction_pct > 50 or keys_removed_pct > 50
@@ -356,7 +360,6 @@ class VersionControl:
         - theirs: Keep source branch content for conflicts
         - section_merge: Merge non-conflicting sections, source wins on conflicts
         """
-        from prompt_forge.core.differ import StructuralDiffer
 
         # Get heads of both branches
         source_head = self.db.select(

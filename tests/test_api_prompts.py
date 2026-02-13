@@ -3,9 +3,14 @@
 
 class TestPromptAPI:
     def test_create_prompt(self, client):
-        resp = client.post("/api/v1/prompts", json={
-            "slug": "test-prompt", "name": "Test", "type": "persona",
-        })
+        resp = client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "test-prompt",
+                "name": "Test",
+                "type": "persona",
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert data["slug"] == "test-prompt"

@@ -43,11 +43,17 @@ class TestInheritance:
     def test_child_inherits_parent_sections(self, registry, vcs):
         """Child inherits sections from parent that it doesn't override."""
         registry.create_prompt(
-            slug="researcher", name="Researcher", type="persona",
-            content=_make_content({"identity": "You are a researcher.", "skills": "You research things."}),
+            slug="researcher",
+            name="Researcher",
+            type="persona",
+            content=_make_content(
+                {"identity": "You are a researcher.", "skills": "You research things."}
+            ),
         )
         registry.create_prompt(
-            slug="senior-researcher", name="Senior Researcher", type="persona",
+            slug="senior-researcher",
+            name="Senior Researcher",
+            type="persona",
             parent_slug="researcher",
             content=_make_content({"identity": "You are a senior researcher."}),
         )
@@ -63,11 +69,15 @@ class TestInheritance:
     def test_child_overrides_work(self, registry):
         """Child sections replace parent sections with same id."""
         registry.create_prompt(
-            slug="base-agent", name="Base Agent", type="persona",
+            slug="base-agent",
+            name="Base Agent",
+            type="persona",
             content=_make_content({"identity": "Base identity", "tone": "Formal"}),
         )
         registry.create_prompt(
-            slug="casual-agent", name="Casual Agent", type="persona",
+            slug="casual-agent",
+            name="Casual Agent",
+            type="persona",
             parent_slug="base-agent",
             content=_make_content({"tone": "Very casual and friendly"}),
         )
@@ -81,16 +91,22 @@ class TestInheritance:
     def test_deep_inheritance(self, registry):
         """Grandchild → child → parent chain works."""
         registry.create_prompt(
-            slug="base", name="Base", type="persona",
+            slug="base",
+            name="Base",
+            type="persona",
             content=_make_content({"a": "A from base", "b": "B from base", "c": "C from base"}),
         )
         registry.create_prompt(
-            slug="mid", name="Mid", type="persona",
+            slug="mid",
+            name="Mid",
+            type="persona",
             parent_slug="base",
             content=_make_content({"b": "B from mid"}),
         )
         registry.create_prompt(
-            slug="leaf", name="Leaf", type="persona",
+            slug="leaf",
+            name="Leaf",
+            type="persona",
             parent_slug="mid",
             content=_make_content({"c": "C from leaf"}),
         )
@@ -125,8 +141,12 @@ class TestInheritance:
     def test_prompt_chain(self, registry):
         """get_prompt_chain returns correct order."""
         registry.create_prompt(slug="grandparent", name="GP", type="persona")
-        registry.create_prompt(slug="parent-chain", name="P", type="persona", parent_slug="grandparent")
-        registry.create_prompt(slug="child-chain", name="C", type="persona", parent_slug="parent-chain")
+        registry.create_prompt(
+            slug="parent-chain", name="P", type="persona", parent_slug="grandparent"
+        )
+        registry.create_prompt(
+            slug="child-chain", name="C", type="persona", parent_slug="parent-chain"
+        )
 
         chain = registry.get_prompt_chain("child-chain")
         assert [p["slug"] for p in chain] == ["child-chain", "parent-chain", "grandparent"]
@@ -134,11 +154,15 @@ class TestInheritance:
     def test_composition_with_inherited_prompts(self, registry, resolver):
         """Composition resolves inheritance before assembling."""
         registry.create_prompt(
-            slug="base-persona", name="Base", type="persona",
+            slug="base-persona",
+            name="Base",
+            type="persona",
             content=_make_content({"identity": "Base identity", "skills": "Base skills"}),
         )
         registry.create_prompt(
-            slug="extended-persona", name="Extended", type="persona",
+            slug="extended-persona",
+            name="Extended",
+            type="persona",
             parent_slug="base-persona",
             content=_make_content({"identity": "Extended identity"}),
         )

@@ -30,6 +30,7 @@ GATEWAY_URL = os.getenv("OPENCLAW_GATEWAY", "http://localhost:18789")
 @dataclass
 class EvaluationReport:
     """Report from prompt evaluation."""
+
     slug: str
     structure_score: float  # 0-1
     coverage_score: float  # 0-1
@@ -113,7 +114,7 @@ Only output the JSON, no other text."""
         if llm_response:
             try:
                 # Extract JSON from response (handle markdown code blocks)
-                json_match = re.search(r'\{[\s\S]*\}', llm_response)
+                json_match = re.search(r"\{[\s\S]*\}", llm_response)
                 if json_match:
                     design = json.loads(json_match.group())
                 else:
@@ -126,7 +127,7 @@ Only output the JSON, no other text."""
 
         # Fallback to template if LLM fails
         if not design or "content" not in design:
-            slug = re.sub(r'[^a-z0-9]+', '-', requirements.lower()[:40]).strip('-')
+            slug = re.sub(r"[^a-z0-9]+", "-", requirements.lower()[:40]).strip("-")
             if len(slug) < 2:
                 slug = "new-prompt"
             design = {
@@ -135,13 +136,24 @@ Only output the JSON, no other text."""
                 "description": requirements,
                 "content": {
                     "sections": [
-                        {"id": "identity", "label": "Identity", "content": f"You are an AI assistant specialised in: {requirements}"},
+                        {
+                            "id": "identity",
+                            "label": "Identity",
+                            "content": f"You are an AI assistant specialised in: {requirements}",
+                        },
                         {"id": "skills", "label": "Skills", "content": ""},
-                        {"id": "constraints", "label": "Constraints", "content": "Be clear and concise."},
+                        {
+                            "id": "constraints",
+                            "label": "Constraints",
+                            "content": "Be clear and concise.",
+                        },
                         {"id": "output_format", "label": "Output Format", "content": ""},
                     ],
                     "variables": {},
-                    "metadata": {"estimated_tokens": 100, "target_model": "claude-sonnet-4-20250514"},
+                    "metadata": {
+                        "estimated_tokens": 100,
+                        "target_model": "claude-sonnet-4-20250514",
+                    },
                 },
             }
 
@@ -197,7 +209,7 @@ Only output the JSON, no other text."""
         new_content = None
         if llm_response:
             try:
-                json_match = re.search(r'\{[\s\S]*\}', llm_response)
+                json_match = re.search(r"\{[\s\S]*\}", llm_response)
                 if json_match:
                     new_content = json.loads(json_match.group())
                 else:
@@ -214,11 +226,13 @@ Only output the JSON, no other text."""
                     s["content"] = s.get("content", "") + f"\n\nRefinement feedback: {feedback}"
                     break
             else:
-                sections.append({
-                    "id": "constraints",
-                    "label": "Constraints",
-                    "content": f"Refinement feedback: {feedback}",
-                })
+                sections.append(
+                    {
+                        "id": "constraints",
+                        "label": "Constraints",
+                        "content": f"Refinement feedback: {feedback}",
+                    }
+                )
             new_content["sections"] = sections
 
         # Commit refined version
@@ -291,12 +305,11 @@ Only output the JSON, no other text."""
         # Usage summary (best-effort)
         usage_summary: dict[str, Any] = {}
         try:
-            from prompt_forge.db.client import get_supabase_client
             db = self.registry.db
             logs = db.select("prompt_usage_log", filters={"prompt_id": str(prompt["id"])})
             if logs:
                 total = len(logs)
-                successes = sum(1 for l in logs if l.get("outcome") == "success")
+                successes = sum(1 for entry in logs if entry.get("outcome") == "success")
                 usage_summary = {
                     "total_uses": total,
                     "success_rate": round(successes / total, 2) if total else 0,
@@ -304,7 +317,9 @@ Only output the JSON, no other text."""
         except Exception:
             pass
 
-        logger.info("architect.evaluate", slug=slug, structure=structure_score, coverage=coverage_score)
+        logger.info(
+            "architect.evaluate", slug=slug, structure=structure_score, coverage=coverage_score
+        )
 
         return EvaluationReport(
             slug=slug,

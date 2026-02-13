@@ -27,55 +27,65 @@ class StructuralDiffer:
         # Check for removed and modified sections
         for section_id, old_section in old_sections.items():
             if section_id not in new_sections:
-                changes.append({
-                    "section_id": section_id,
-                    "type": "removed",
-                    "content": old_section.get("content", ""),
-                })
+                changes.append(
+                    {
+                        "section_id": section_id,
+                        "type": "removed",
+                        "content": old_section.get("content", ""),
+                    }
+                )
             else:
                 new_section = new_sections[section_id]
                 old_text = old_section.get("content", "")
                 new_text = new_section.get("content", "")
                 if old_text != new_text:
                     similarity = SequenceMatcher(None, old_text, new_text).ratio()
-                    changes.append({
-                        "section_id": section_id,
-                        "type": "modified",
-                        "before": old_text,
-                        "after": new_text,
-                        "similarity": round(similarity, 2),
-                    })
+                    changes.append(
+                        {
+                            "section_id": section_id,
+                            "type": "modified",
+                            "before": old_text,
+                            "after": new_text,
+                            "similarity": round(similarity, 2),
+                        }
+                    )
 
         # Check for added sections
         for section_id, new_section in new_sections.items():
             if section_id not in old_sections:
-                changes.append({
-                    "section_id": section_id,
-                    "type": "added",
-                    "content": new_section.get("content", ""),
-                })
+                changes.append(
+                    {
+                        "section_id": section_id,
+                        "type": "added",
+                        "content": new_section.get("content", ""),
+                    }
+                )
 
         # Check for variable changes
         old_vars = old_content.get("variables", {})
         new_vars = new_content.get("variables", {})
         if old_vars != new_vars:
-            changes.append({
-                "section_id": "_variables",
-                "type": "modified",
-                "before": old_vars,
-                "after": new_vars,
-            })
+            changes.append(
+                {
+                    "section_id": "_variables",
+                    "type": "modified",
+                    "before": old_vars,
+                    "after": new_vars,
+                }
+            )
 
         # Check for metadata changes
         old_meta = old_content.get("metadata", {})
         new_meta = new_content.get("metadata", {})
         if old_meta != new_meta:
-            changes.append({
-                "section_id": "_metadata",
-                "type": "modified",
-                "before": old_meta,
-                "after": new_meta,
-            })
+            changes.append(
+                {
+                    "section_id": "_metadata",
+                    "type": "modified",
+                    "before": old_meta,
+                    "after": new_meta,
+                }
+            )
 
         # Build summary
         added = sum(1 for c in changes if c["type"] == "added")
@@ -131,12 +141,14 @@ class StructuralDiffer:
             else:
                 old_len = len(json.dumps(old_val, ensure_ascii=False))
                 new_len = len(json.dumps(new_val, ensure_ascii=False))
-                changes.append({
-                    "field": key,
-                    "action": "modified",
-                    "from_length": old_len,
-                    "to_length": new_len,
-                })
+                changes.append(
+                    {
+                        "field": key,
+                        "action": "modified",
+                        "from_length": old_len,
+                        "to_length": new_len,
+                    }
+                )
                 modified_count += 1
 
         added_count = len(new_keys - old_keys)

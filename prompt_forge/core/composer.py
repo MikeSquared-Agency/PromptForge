@@ -45,15 +45,15 @@ class CompositionEngine:
         sections: list[str] = []
 
         # Resolve persona (with inheritance if registry available)
-        persona_version = self.resolver.resolve(
-            slug=persona_slug, branch=branch, strategy=strategy
+        persona_version = self.resolver.resolve(slug=persona_slug, branch=branch, strategy=strategy)
+        components.append(
+            {
+                "slug": persona_slug,
+                "type": "persona",
+                "version": persona_version["version"],
+                "branch": branch,
+            }
         )
-        components.append({
-            "slug": persona_slug,
-            "type": "persona",
-            "version": persona_version["version"],
-            "branch": branch,
-        })
         if self.registry:
             effective = self.registry.get_effective_content(persona_slug, branch)
             sections.append(self._extract_text(effective, "persona"))
@@ -64,12 +64,14 @@ class CompositionEngine:
         for slug in skill_slugs:
             try:
                 version = self.resolver.resolve(slug=slug, branch=branch, strategy=strategy)
-                components.append({
-                    "slug": slug,
-                    "type": "skill",
-                    "version": version["version"],
-                    "branch": branch,
-                })
+                components.append(
+                    {
+                        "slug": slug,
+                        "type": "skill",
+                        "version": version["version"],
+                        "branch": branch,
+                    }
+                )
                 if self.registry:
                     effective = self.registry.get_effective_content(slug, branch)
                     sections.append(self._extract_text(effective, "skill"))
@@ -82,12 +84,14 @@ class CompositionEngine:
         for slug in constraint_slugs:
             try:
                 version = self.resolver.resolve(slug=slug, branch=branch, strategy=strategy)
-                components.append({
-                    "slug": slug,
-                    "type": "constraint",
-                    "version": version["version"],
-                    "branch": branch,
-                })
+                components.append(
+                    {
+                        "slug": slug,
+                        "type": "constraint",
+                        "version": version["version"],
+                        "branch": branch,
+                    }
+                )
                 if self.registry:
                     effective = self.registry.get_effective_content(slug, branch)
                     sections.append(self._extract_text(effective, "constraint"))
@@ -164,9 +168,7 @@ class CompositionEngine:
                     found_formats.append(fmt)
 
         if len(set(found_formats)) > 1:
-            warnings.append(
-                f"Conflicting output formats detected: {', '.join(set(found_formats))}"
-            )
+            warnings.append(f"Conflicting output formats detected: {', '.join(set(found_formats))}")
 
         return warnings
 
@@ -175,4 +177,5 @@ class CompositionEngine:
 def get_composer() -> CompositionEngine:
     """Get cached composer instance."""
     from prompt_forge.core.registry import get_registry
+
     return CompositionEngine(get_resolver(), get_registry())

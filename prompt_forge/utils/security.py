@@ -8,12 +8,12 @@ from typing import Any
 
 # Patterns that might indicate leaked secrets
 SECRET_PATTERNS = [
-    re.compile(r"sk-ant-[a-zA-Z0-9-]{20,}"),       # Anthropic API key
-    re.compile(r"sk-[a-zA-Z0-9]{20,}"),              # OpenAI API key
-    re.compile(r"ghp_[a-zA-Z0-9]{36}"),              # GitHub PAT
-    re.compile(r"eyJ[a-zA-Z0-9_-]{50,}"),            # JWT tokens
-    re.compile(r"AKIA[0-9A-Z]{16}"),                 # AWS access key
-    re.compile(r"xox[bporas]-[a-zA-Z0-9-]+"),        # Slack tokens
+    re.compile(r"sk-ant-[a-zA-Z0-9-]{20,}"),  # Anthropic API key
+    re.compile(r"sk-[a-zA-Z0-9]{20,}"),  # OpenAI API key
+    re.compile(r"ghp_[a-zA-Z0-9]{36}"),  # GitHub PAT
+    re.compile(r"eyJ[a-zA-Z0-9_-]{50,}"),  # JWT tokens
+    re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS access key
+    re.compile(r"xox[bporas]-[a-zA-Z0-9-]+"),  # Slack tokens
 ]
 
 MAX_CONTENT_SIZE = 50 * 1024  # 50KB default
@@ -24,8 +24,12 @@ def scan_for_secrets(text: str) -> list[str]:
     """Scan text for potential secrets. Returns list of detected pattern names."""
     findings: list[str] = []
     pattern_names = [
-        "Anthropic API key", "OpenAI API key", "GitHub PAT",
-        "JWT token", "AWS access key", "Slack token",
+        "Anthropic API key",
+        "OpenAI API key",
+        "GitHub PAT",
+        "JWT token",
+        "AWS access key",
+        "Slack token",
     ]
     for pattern, name in zip(SECRET_PATTERNS, pattern_names):
         if pattern.search(text):
@@ -36,6 +40,7 @@ def scan_for_secrets(text: str) -> list[str]:
 def validate_content_size(content: dict[str, Any], max_bytes: int = MAX_CONTENT_SIZE) -> bool:
     """Check that serialised content doesn't exceed size limit."""
     import json
+
     return len(json.dumps(content).encode()) <= max_bytes
 
 
@@ -50,6 +55,7 @@ def sanitise_content(content: dict[str, Any]) -> tuple[dict[str, Any], list[str]
     Returns (content, warnings).
     """
     import json
+
     warnings: list[str] = []
 
     text = json.dumps(content)

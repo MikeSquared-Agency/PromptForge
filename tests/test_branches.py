@@ -106,23 +106,37 @@ class TestBranchManagement:
 class TestBranchAPI:
     def test_create_branch_api(self, client):
         # Create a prompt first
-        client.post("/api/v1/prompts", json={
-            "slug": "branch-api-test",
-            "name": "Branch API Test",
-            "type": "persona",
-            "content": {"sections": [{"id": "identity", "label": "Identity", "content": "Test"}], "variables": {}, "metadata": {}},
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "branch-api-test",
+                "name": "Branch API Test",
+                "type": "persona",
+                "content": {
+                    "sections": [{"id": "identity", "label": "Identity", "content": "Test"}],
+                    "variables": {},
+                    "metadata": {},
+                },
+            },
+        )
         resp = client.post("/api/v1/prompts/branch-api-test/branches", json={"name": "experiment"})
         assert resp.status_code == 201
         assert resp.json()["name"] == "experiment"
 
     def test_list_branches_api(self, client):
-        client.post("/api/v1/prompts", json={
-            "slug": "branch-list-test",
-            "name": "Test",
-            "type": "persona",
-            "content": {"sections": [{"id": "identity", "label": "Identity", "content": "Test"}], "variables": {}, "metadata": {}},
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "branch-list-test",
+                "name": "Test",
+                "type": "persona",
+                "content": {
+                    "sections": [{"id": "identity", "label": "Identity", "content": "Test"}],
+                    "variables": {},
+                    "metadata": {},
+                },
+            },
+        )
         client.post("/api/v1/prompts/branch-list-test/branches", json={"name": "exp-1"})
         client.post("/api/v1/prompts/branch-list-test/branches", json={"name": "exp-2"})
         resp = client.get("/api/v1/prompts/branch-list-test/branches")
@@ -130,12 +144,19 @@ class TestBranchAPI:
         assert len(resp.json()) == 2
 
     def test_merge_branch_api(self, client):
-        client.post("/api/v1/prompts", json={
-            "slug": "branch-merge-test",
-            "name": "Test",
-            "type": "persona",
-            "content": {"sections": [{"id": "identity", "label": "Identity", "content": "Test"}], "variables": {}, "metadata": {}},
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "branch-merge-test",
+                "name": "Test",
+                "type": "persona",
+                "content": {
+                    "sections": [{"id": "identity", "label": "Identity", "content": "Test"}],
+                    "variables": {},
+                    "metadata": {},
+                },
+            },
+        )
         client.post("/api/v1/prompts/branch-merge-test/branches", json={"name": "feature"})
         resp = client.post(
             "/api/v1/prompts/branch-merge-test/branches/feature/merge",

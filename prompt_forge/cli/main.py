@@ -58,6 +58,7 @@ def _output(ctx: click.Context, data: Any, columns: list[str] | None = None) -> 
 
 # --- Prompt commands ---
 
+
 @cli.group()
 def prompt() -> None:
     """Manage prompts."""
@@ -86,7 +87,9 @@ def prompt_list(ctx: click.Context, prompt_type: str | None, tag: str | None) ->
 @click.option("--parent", default=None)
 @click.option("--tags", default="")
 @click.pass_context
-def prompt_create(ctx: click.Context, slug: str, name: str, prompt_type: str, parent: str | None, tags: str) -> None:
+def prompt_create(
+    ctx: click.Context, slug: str, name: str, prompt_type: str, parent: str | None, tags: str
+) -> None:
     """Create a prompt."""
     client: ForgeClient = ctx.obj
     data: dict[str, Any] = {
@@ -123,6 +126,7 @@ def prompt_archive(ctx: click.Context, slug: str) -> None:
 
 # --- Version commands ---
 
+
 @cli.group()
 def version() -> None:
     """Manage versions."""
@@ -135,7 +139,9 @@ def version() -> None:
 @click.option("--author", default="cli")
 @click.option("--branch", default="main")
 @click.pass_context
-def version_commit(ctx: click.Context, slug: str, message: str, file_path: str | None, author: str, branch: str) -> None:
+def version_commit(
+    ctx: click.Context, slug: str, message: str, file_path: str | None, author: str, branch: str
+) -> None:
     """Commit a new version. Reads content from --file or stdin (JSON)."""
     client: ForgeClient = ctx.obj
     if file_path:
@@ -143,7 +149,9 @@ def version_commit(ctx: click.Context, slug: str, message: str, file_path: str |
             content = json.load(f)
     else:
         content = json.load(sys.stdin)
-    result = client.commit_version(slug, {"content": content, "message": message, "author": author, "branch": branch})
+    result = client.commit_version(
+        slug, {"content": content, "message": message, "author": author, "branch": branch}
+    )
     _output(ctx, result)
 
 
@@ -185,6 +193,7 @@ def version_rollback(ctx: click.Context, slug: str, version_num: int, author: st
 
 # --- Compose ---
 
+
 @cli.command()
 @click.option("--persona", required=True)
 @click.option("--skills", default="")
@@ -192,7 +201,9 @@ def version_rollback(ctx: click.Context, slug: str, version_num: int, author: st
 @click.option("--variables", multiple=True, help="key=value pairs")
 @click.option("--branch", default="main")
 @click.pass_context
-def compose(ctx: click.Context, persona: str, skills: str, constraints: str, variables: tuple, branch: str) -> None:
+def compose(
+    ctx: click.Context, persona: str, skills: str, constraints: str, variables: tuple, branch: str
+) -> None:
     """Compose a prompt from components."""
     client: ForgeClient = ctx.obj
     vars_dict = {}
@@ -203,7 +214,9 @@ def compose(ctx: click.Context, persona: str, skills: str, constraints: str, var
     data = {
         "persona": persona,
         "skills": [s.strip() for s in skills.split(",") if s.strip()] if skills else [],
-        "constraints": [c.strip() for c in constraints.split(",") if c.strip()] if constraints else [],
+        "constraints": [c.strip() for c in constraints.split(",") if c.strip()]
+        if constraints
+        else [],
         "variables": vars_dict,
         "branch": branch,
     }
@@ -217,13 +230,16 @@ def compose(ctx: click.Context, persona: str, skills: str, constraints: str, var
 
 # --- Resolve ---
 
+
 @cli.command()
 @click.argument("slug")
 @click.option("--branch", default="main")
 @click.option("--version", "version_num", type=int, default=None)
 @click.option("--strategy", default="latest")
 @click.pass_context
-def resolve(ctx: click.Context, slug: str, branch: str, version_num: int | None, strategy: str) -> None:
+def resolve(
+    ctx: click.Context, slug: str, branch: str, version_num: int | None, strategy: str
+) -> None:
     """Resolve a prompt to a specific version."""
     client: ForgeClient = ctx.obj
     data: dict[str, Any] = {"slug": slug, "branch": branch, "strategy": strategy}
@@ -234,6 +250,7 @@ def resolve(ctx: click.Context, slug: str, branch: str, version_num: int | None,
 
 
 # --- Deploy ---
+
 
 @cli.command()
 @click.argument("slug")
@@ -258,6 +275,7 @@ def deploy(ctx: click.Context, slug: str, branch: str) -> None:
 
 
 # --- Search ---
+
 
 @cli.command()
 @click.argument("query")

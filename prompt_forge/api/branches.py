@@ -15,18 +15,21 @@ router = APIRouter()
 
 class BranchCreate(BaseModel):
     """Create a branch."""
+
     name: str = Field(..., min_length=1, max_length=100)
     from_branch: str = "main"
 
 
 class BranchMerge(BaseModel):
     """Merge a branch."""
+
     strategy: str = Field(default="theirs", pattern=r"^(ours|theirs|section_merge)$")
     author: str = "system"
 
 
 class BranchResponse(BaseModel):
     """Branch info."""
+
     id: str
     prompt_id: str
     name: str

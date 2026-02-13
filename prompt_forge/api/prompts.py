@@ -45,14 +45,14 @@ async def list_prompts(
 ) -> list[PromptResponse]:
     """List prompts with optional filters."""
     prompts = registry.list_prompts(type=type, tag=tag, search=search, archived=archived)
-    
+
     # Add subscriber counts
     all_subs = db.select("prompt_subscriptions")
     sub_counts: dict[str, int] = {}
     for s in all_subs:
         pid = str(s["prompt_id"])
         sub_counts[pid] = sub_counts.get(pid, 0) + 1
-    
+
     result = []
     for p in prompts:
         resp = PromptResponse(**p)

@@ -18,18 +18,21 @@ router = APIRouter(prefix="/architect", tags=["architect"])
 
 class DesignRequest(BaseModel):
     """Design a new prompt."""
+
     requirements: str = Field(..., min_length=1)
     type: str = Field(default="persona", pattern=r"^(persona|skill|constraint|template|meta)$")
 
 
 class RefineRequest(BaseModel):
     """Refine an existing prompt."""
+
     slug: str
     feedback: str = Field(..., min_length=1)
 
 
 class EvaluateRequest(BaseModel):
     """Evaluate a prompt."""
+
     slug: str
 
 

@@ -25,12 +25,15 @@ class TestBestPerforming:
         resolver, prompt, v1, v2, v3 = self._setup(mock_db)
         # Only 2 uses (below threshold of 3)
         for _ in range(2):
-            mock_db.insert("prompt_usage_log", {
-                "prompt_id": str(prompt["id"]),
-                "version_id": v1["id"],
-                "agent_id": "test",
-                "outcome": "success",
-            })
+            mock_db.insert(
+                "prompt_usage_log",
+                {
+                    "prompt_id": str(prompt["id"]),
+                    "version_id": v1["id"],
+                    "agent_id": "test",
+                    "outcome": "success",
+                },
+            )
         result = resolver.resolve("perf-test", strategy="best_performing")
         assert result["version"] == 3  # fallback to latest
 
@@ -40,30 +43,39 @@ class TestBestPerforming:
 
         # v1: 2/5 success (40%)
         for i in range(5):
-            mock_db.insert("prompt_usage_log", {
-                "prompt_id": pid,
-                "version_id": v1["id"],
-                "agent_id": "test",
-                "outcome": "success" if i < 2 else "failure",
-            })
+            mock_db.insert(
+                "prompt_usage_log",
+                {
+                    "prompt_id": pid,
+                    "version_id": v1["id"],
+                    "agent_id": "test",
+                    "outcome": "success" if i < 2 else "failure",
+                },
+            )
 
         # v2: 4/5 success (80%) — best
         for i in range(5):
-            mock_db.insert("prompt_usage_log", {
-                "prompt_id": pid,
-                "version_id": v2["id"],
-                "agent_id": "test",
-                "outcome": "success" if i < 4 else "failure",
-            })
+            mock_db.insert(
+                "prompt_usage_log",
+                {
+                    "prompt_id": pid,
+                    "version_id": v2["id"],
+                    "agent_id": "test",
+                    "outcome": "success" if i < 4 else "failure",
+                },
+            )
 
         # v3: 3/5 success (60%)
         for i in range(5):
-            mock_db.insert("prompt_usage_log", {
-                "prompt_id": pid,
-                "version_id": v3["id"],
-                "agent_id": "test",
-                "outcome": "success" if i < 3 else "failure",
-            })
+            mock_db.insert(
+                "prompt_usage_log",
+                {
+                    "prompt_id": pid,
+                    "version_id": v3["id"],
+                    "agent_id": "test",
+                    "outcome": "success" if i < 3 else "failure",
+                },
+            )
 
         result = resolver.resolve("perf-test", strategy="best_performing")
         assert result["version"] == 2  # v2 has highest success rate

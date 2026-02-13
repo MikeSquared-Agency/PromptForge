@@ -9,8 +9,11 @@ class TestPromptRegistry:
     def test_create_prompt(self, mock_db):
         registry = PromptRegistry(mock_db)
         prompt = registry.create_prompt(
-            slug="test-persona", name="Test Persona", type="persona",
-            description="A test", tags=["test"],
+            slug="test-persona",
+            name="Test Persona",
+            type="persona",
+            description="A test",
+            tags=["test"],
         )
         assert prompt["slug"] == "test-persona"
         assert prompt["type"] == "persona"
@@ -19,7 +22,9 @@ class TestPromptRegistry:
     def test_create_prompt_with_content(self, mock_db, sample_content):
         registry = PromptRegistry(mock_db)
         prompt = registry.create_prompt(
-            slug="test-persona", name="Test", type="persona",
+            slug="test-persona",
+            name="Test",
+            type="persona",
             content=sample_content,
         )
         # Should also create a version

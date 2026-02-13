@@ -22,6 +22,7 @@ _nats_available = False
 
 try:
     import nats as nats_lib
+
     _nats_available = True
 except ImportError:
     _nats_available = False

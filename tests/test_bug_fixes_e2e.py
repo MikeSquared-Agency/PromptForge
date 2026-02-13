@@ -13,9 +13,14 @@ class TestControlCharsE2E:
     through the API and produce valid, parseable JSON responses."""
 
     def _create_prompt(self, client, slug="ctrl-chars"):
-        client.post("/api/v1/prompts", json={
-            "slug": slug, "name": "Control Chars Test", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": slug,
+                "name": "Control Chars Test",
+                "type": "persona",
+            },
+        )
 
     def test_newlines_in_voice_field(self, client):
         """Newlines in content fields survive create → fetch cycle."""
@@ -24,9 +29,13 @@ class TestControlCharsE2E:
             "voice": "Warm and empathetic.\nUses metaphors.\nAsks probing questions.",
             "identity": "You are Kai.",
         }
-        client.post("/api/v1/prompts/ctrl-chars/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/ctrl-chars/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/ctrl-chars/versions/latest")
         assert resp.status_code == 200
         raw = resp.content.decode("utf-8")
@@ -37,9 +46,13 @@ class TestControlCharsE2E:
         """Tabs in content are properly escaped in JSON output."""
         self._create_prompt(client, "tab-test")
         content = {"instructions": "Step 1\tDo this\tStep 2\tDo that"}
-        client.post("/api/v1/prompts/tab-test/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/tab-test/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/tab-test/versions/latest")
         assert resp.status_code == 200
         parsed = json.loads(resp.content.decode("utf-8"))
@@ -49,9 +62,13 @@ class TestControlCharsE2E:
         """Carriage returns (\\r\\n) are properly handled."""
         self._create_prompt(client, "cr-test")
         content = {"identity": "You are Kai.\r\nA helpful assistant.\r\nBe kind."}
-        client.post("/api/v1/prompts/cr-test/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/cr-test/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/cr-test/versions/latest")
         assert resp.status_code == 200
         parsed = json.loads(resp.content.decode("utf-8"))
@@ -61,9 +78,13 @@ class TestControlCharsE2E:
         """List versions endpoint also produces valid JSON with control chars."""
         self._create_prompt(client, "list-ctrl")
         content = {"voice": "Line 1\nLine 2\n\tIndented line 3"}
-        client.post("/api/v1/prompts/list-ctrl/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/list-ctrl/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/list-ctrl/versions")
         assert resp.status_code == 200
         parsed = json.loads(resp.content.decode("utf-8"))
@@ -77,9 +98,13 @@ class TestControlCharsE2E:
             "voice": "Warm\tand\tkind",
             "principles": ["Be honest\nAlways", "Be kind\tTo all"],
         }
-        client.post("/api/v1/prompts/mixed-ctrl/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/mixed-ctrl/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/mixed-ctrl/versions/latest")
         assert resp.status_code == 200
         parsed = json.loads(resp.content.decode("utf-8"))
@@ -89,12 +114,20 @@ class TestControlCharsE2E:
         """PATCH merge preserves control characters in existing content."""
         self._create_prompt(client, "patch-ctrl")
         content = {"voice": "Line 1\nLine 2\nLine 3", "identity": "Kai"}
-        client.post("/api/v1/prompts/patch-ctrl/versions", json={
-            "content": content, "message": "v1",
-        })
-        resp = client.patch("/api/v1/prompts/patch-ctrl/versions", json={
-            "content": {"slack_id": "U123"}, "message": "add slack",
-        })
+        client.post(
+            "/api/v1/prompts/patch-ctrl/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
+        resp = client.patch(
+            "/api/v1/prompts/patch-ctrl/versions",
+            json={
+                "content": {"slack_id": "U123"},
+                "message": "add slack",
+            },
+        )
         assert resp.status_code == 201
         parsed = json.loads(resp.content.decode("utf-8"))
         assert parsed["content"]["voice"] == "Line 1\nLine 2\nLine 3"
@@ -105,12 +138,20 @@ class TestControlCharsE2E:
         self._create_prompt(client, "diff-ctrl")
         v1 = {"voice": "Line 1\nLine 2", "identity": "Kai"}
         v2 = {"voice": "Updated\nVoice", "identity": "Kai", "slack": "U1"}
-        client.post("/api/v1/prompts/diff-ctrl/versions", json={
-            "content": v1, "message": "v1",
-        })
-        client.post("/api/v1/prompts/diff-ctrl/versions", json={
-            "content": v2, "message": "v2",
-        })
+        client.post(
+            "/api/v1/prompts/diff-ctrl/versions",
+            json={
+                "content": v1,
+                "message": "v1",
+            },
+        )
+        client.post(
+            "/api/v1/prompts/diff-ctrl/versions",
+            json={
+                "content": v2,
+                "message": "v2",
+            },
+        )
         resp = client.get("/api/v1/prompts/diff-ctrl/versions/1/diff/2")
         assert resp.status_code == 200
         data = resp.json()
@@ -124,17 +165,26 @@ class TestLatestEndpointE2E:
     version without conflicting with /versions/{version:int}."""
 
     def _create_prompt(self, client, slug="latest-test"):
-        client.post("/api/v1/prompts", json={
-            "slug": slug, "name": "Latest Test", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": slug,
+                "name": "Latest Test",
+                "type": "persona",
+            },
+        )
 
     def test_latest_returns_most_recent_after_multiple_versions(self, client):
         """After creating 3 versions, /latest returns v3."""
         self._create_prompt(client)
         for i in range(1, 4):
-            client.post("/api/v1/prompts/latest-test/versions", json={
-                "content": {"version_num": i}, "message": f"v{i}",
-            })
+            client.post(
+                "/api/v1/prompts/latest-test/versions",
+                json={
+                    "content": {"version_num": i},
+                    "message": f"v{i}",
+                },
+            )
         resp = client.get("/api/v1/prompts/latest-test/versions/latest")
         assert resp.status_code == 200
         assert resp.json()["version"] == 3
@@ -143,15 +193,23 @@ class TestLatestEndpointE2E:
     def test_latest_updates_after_new_version(self, client):
         """/latest reflects newly created versions immediately."""
         self._create_prompt(client, "latest-live")
-        client.post("/api/v1/prompts/latest-live/versions", json={
-            "content": {"state": "initial"}, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/latest-live/versions",
+            json={
+                "content": {"state": "initial"},
+                "message": "v1",
+            },
+        )
         resp1 = client.get("/api/v1/prompts/latest-live/versions/latest")
         assert resp1.json()["version"] == 1
 
-        client.post("/api/v1/prompts/latest-live/versions", json={
-            "content": {"state": "updated"}, "message": "v2",
-        })
+        client.post(
+            "/api/v1/prompts/latest-live/versions",
+            json={
+                "content": {"state": "updated"},
+                "message": "v2",
+            },
+        )
         resp2 = client.get("/api/v1/prompts/latest-live/versions/latest")
         assert resp2.json()["version"] == 2
         assert resp2.json()["content"]["state"] == "updated"
@@ -159,12 +217,20 @@ class TestLatestEndpointE2E:
     def test_latest_and_integer_routes_coexist(self, client):
         """/versions/latest and /versions/1 both work without conflict."""
         self._create_prompt(client, "coexist")
-        client.post("/api/v1/prompts/coexist/versions", json={
-            "content": {"identity": "v1 content"}, "message": "v1",
-        })
-        client.post("/api/v1/prompts/coexist/versions", json={
-            "content": {"identity": "v2 content"}, "message": "v2",
-        })
+        client.post(
+            "/api/v1/prompts/coexist/versions",
+            json={
+                "content": {"identity": "v1 content"},
+                "message": "v1",
+            },
+        )
+        client.post(
+            "/api/v1/prompts/coexist/versions",
+            json={
+                "content": {"identity": "v2 content"},
+                "message": "v2",
+            },
+        )
 
         # Integer route
         resp_int = client.get("/api/v1/prompts/coexist/versions/1")
@@ -192,9 +258,13 @@ class TestLatestEndpointE2E:
     def test_latest_auto_subscribes_agent(self, client):
         """/versions/latest with X-Agent-ID header creates a subscription."""
         self._create_prompt(client, "sub-latest")
-        client.post("/api/v1/prompts/sub-latest/versions", json={
-            "content": {"identity": "Kai"}, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/sub-latest/versions",
+            json={
+                "content": {"identity": "Kai"},
+                "message": "v1",
+            },
+        )
         resp = client.get(
             "/api/v1/prompts/sub-latest/versions/latest",
             headers={"X-Agent-ID": "scout"},
@@ -216,9 +286,14 @@ class TestSoulBootPipelineE2E:
     """
 
     def _create_prompt(self, client, slug="soul-test"):
-        client.post("/api/v1/prompts", json={
-            "slug": slug, "name": "Soul Test", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": slug,
+                "name": "Soul Test",
+                "type": "persona",
+            },
+        )
 
     def test_sections_format_via_latest(self, client):
         """Content with sections array is accessible via /latest."""
@@ -229,9 +304,13 @@ class TestSoulBootPipelineE2E:
                 {"id": "voice", "label": "Voice", "content": "Warm and empathetic."},
             ],
         }
-        client.post("/api/v1/prompts/soul-test/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/soul-test/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/soul-test/versions/latest")
         assert resp.status_code == 200
         data = resp.json()
@@ -247,9 +326,13 @@ class TestSoulBootPipelineE2E:
             "voice": "Warm and empathetic.",
             "principles": ["Be kind", "Be honest"],
         }
-        client.post("/api/v1/prompts/flat-soul/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/flat-soul/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/flat-soul/versions/latest")
         assert resp.status_code == 200
         data = resp.json()
@@ -268,9 +351,13 @@ class TestSoulBootPipelineE2E:
                 {"id": "constraints", "content": "Be concise."},
             ],
         }
-        client.post("/api/v1/prompts/boot-sections/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/boot-sections/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
 
         # Simulate entrypoint: fetch /latest, parse response
         resp = client.get("/api/v1/prompts/boot-sections/versions/latest")
@@ -310,9 +397,13 @@ class TestSoulBootPipelineE2E:
             "principles": ["Security first", "Performance matters"],
             "constraints": "No hand-holding.",
         }
-        client.post("/api/v1/prompts/boot-flat/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/boot-flat/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
 
         resp = client.get("/api/v1/prompts/boot-flat/versions/latest")
         assert resp.status_code == 200
@@ -354,9 +445,13 @@ class TestSoulBootPipelineE2E:
             "identity": "You are Scout.\nA code review assistant.",
             "voice": "Direct\tand\tprecise.",
         }
-        client.post("/api/v1/prompts/boot-ctrl/versions", json={
-            "content": content, "message": "v1",
-        })
+        client.post(
+            "/api/v1/prompts/boot-ctrl/versions",
+            json={
+                "content": content,
+                "message": "v1",
+            },
+        )
         resp = client.get("/api/v1/prompts/boot-ctrl/versions/latest")
         assert resp.status_code == 200
 
@@ -381,24 +476,38 @@ class TestAllBugsIntegration:
         5. Content is flat JSON (Bug 3) — entrypoint can handle it
         """
         # Create prompt and soul
-        client.post("/api/v1/prompts", json={
-            "slug": "agent-boot", "name": "Boot Test", "type": "persona",
-        })
+        client.post(
+            "/api/v1/prompts",
+            json={
+                "slug": "agent-boot",
+                "name": "Boot Test",
+                "type": "persona",
+            },
+        )
         soul = {
             "identity": "You are Scout, a senior code reviewer.\nYou specialize in Python and security.",
             "voice": "Analytical, direct.\tUses bullet points.",
             "principles": ["Security first", "Be concise\nBut thorough"],
             "constraints": "No hand-holding.\r\nExpect developer-level understanding.",
         }
-        client.post("/api/v1/prompts/agent-boot/versions", json={
-            "content": soul, "message": "Initial soul", "author": "mike",
-        })
+        client.post(
+            "/api/v1/prompts/agent-boot/versions",
+            json={
+                "content": soul,
+                "message": "Initial soul",
+                "author": "mike",
+            },
+        )
 
         # Agent adds fields via PATCH
-        client.patch("/api/v1/prompts/agent-boot/versions", json={
-            "content": {"slack_id": "U0AE9ME4SNB"},
-            "message": "Add Slack", "author": "scout",
-        })
+        client.patch(
+            "/api/v1/prompts/agent-boot/versions",
+            json={
+                "content": {"slack_id": "U0AE9ME4SNB"},
+                "message": "Add Slack",
+                "author": "scout",
+            },
+        )
 
         # Boot sequence: fetch latest
         resp = client.get("/api/v1/prompts/agent-boot/versions/latest")

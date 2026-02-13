@@ -38,11 +38,15 @@ class TestPromptArchitect:
     async def test_refine_commits_new_version(self, mock_db, sample_content):
         architect, registry, vcs = self._setup(mock_db, sample_content)
         # Create a prompt to refine
-        prompt = registry.create_prompt(
-            slug="refine-test", name="Refine Test", type="persona",
+        registry.create_prompt(
+            slug="refine-test",
+            name="Refine Test",
+            type="persona",
             content=sample_content,
         )
-        result = await architect.refine("refine-test", "Be more specific about Python 3.12 features")
+        result = await architect.refine(
+            "refine-test", "Be more specific about Python 3.12 features"
+        )
         assert result["status"] == "committed"
         assert result["version"]["version"] == 2
 
@@ -56,7 +60,9 @@ class TestPromptArchitect:
     async def test_evaluate_returns_report(self, mock_db, sample_content):
         architect, registry, vcs = self._setup(mock_db, sample_content)
         registry.create_prompt(
-            slug="eval-test", name="Eval Test", type="persona",
+            slug="eval-test",
+            name="Eval Test",
+            type="persona",
             content=sample_content,
         )
         report = await architect.evaluate("eval-test")
@@ -74,11 +80,15 @@ class TestPromptArchitect:
         architect = PromptArchitect(registry, vcs, composer)
 
         minimal_content = {
-            "sections": [{"id": "identity", "label": "Identity", "content": "You are a test agent."}],
+            "sections": [
+                {"id": "identity", "label": "Identity", "content": "You are a test agent."}
+            ],
             "variables": {},
             "metadata": {},
         }
-        registry.create_prompt(slug="minimal-test", name="Minimal", type="persona", content=minimal_content)
+        registry.create_prompt(
+            slug="minimal-test", name="Minimal", type="persona", content=minimal_content
+        )
         report = await architect.evaluate("minimal-test")
         assert report.structure_score < 1.0  # Missing sections
         assert any("Missing sections" in s for s in report.suggestions)

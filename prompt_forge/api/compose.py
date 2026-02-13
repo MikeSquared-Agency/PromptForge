@@ -19,11 +19,11 @@ async def compose(
     """Compose an agent prompt from components."""
     try:
         result = composer.compose(
-        persona_slug=data.persona,
-        skill_slugs=data.skills,
-        constraint_slugs=data.constraints,
-        variables=data.variables,
-        branch=data.branch,
+            persona_slug=data.persona,
+            skill_slugs=data.skills,
+            constraint_slugs=data.constraints,
+            variables=data.variables,
+            branch=data.branch,
             strategy=data.strategy,
         )
         return ComposeResponse(**result)

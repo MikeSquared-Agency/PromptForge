@@ -47,12 +47,12 @@ async def usage_stats(
     logs = db.select("prompt_usage_log", filters={"prompt_id": prompt_id})
 
     total = len(logs)
-    successes = sum(1 for l in logs if l.get("outcome") == "success")
-    latencies = [l["latency_ms"] for l in logs if l.get("latency_ms") is not None]
+    successes = sum(1 for entry in logs if entry.get("outcome") == "success")
+    latencies = [entry["latency_ms"] for entry in logs if entry.get("latency_ms") is not None]
 
     version_counts: dict[str, int] = {}
-    for l in logs:
-        vid = str(l.get("version_id", "unknown"))
+    for entry in logs:
+        vid = str(entry.get("version_id", "unknown"))
         version_counts[vid] = version_counts.get(vid, 0) + 1
 
     return UsageStatsResponse(
@@ -75,22 +75,24 @@ async def all_usage_stats(
 
     # Group by prompt
     by_prompt: dict[str, list[dict]] = {}
-    for l in logs:
-        pid = l.get("prompt_id")
-        by_prompt.setdefault(pid, []).append(l)
+    for entry in logs:
+        pid = entry.get("prompt_id")
+        by_prompt.setdefault(pid, []).append(entry)
 
     results = []
     for pid, plogs in by_prompt.items():
         total = len(plogs)
-        successes = sum(1 for l in plogs if l.get("outcome") == "success")
-        latencies = [l["latency_ms"] for l in plogs if l.get("latency_ms") is not None]
-        results.append({
-            "prompt_id": pid,
-            "prompt_slug": prompt_map.get(pid, "unknown"),
-            "total_uses": total,
-            "success_rate": round(successes / total, 3) if total else 0,
-            "avg_latency_ms": round(sum(latencies) / len(latencies), 1) if latencies else None,
-        })
+        successes = sum(1 for entry in plogs if entry.get("outcome") == "success")
+        latencies = [entry["latency_ms"] for entry in plogs if entry.get("latency_ms") is not None]
+        results.append(
+            {
+                "prompt_id": pid,
+                "prompt_slug": prompt_map.get(pid, "unknown"),
+                "total_uses": total,
+                "success_rate": round(successes / total, 3) if total else 0,
+                "avg_latency_ms": round(sum(latencies) / len(latencies), 1) if latencies else None,
+            }
+        )
 
     return sorted(results, key=lambda r: r["total_uses"], reverse=True)
 
@@ -106,21 +108,23 @@ async def top_prompts(
     prompt_map = {p["id"]: p for p in prompts}
 
     counts: dict[str, int] = {}
-    for l in logs:
-        pid = l.get("prompt_id")
+    for entry in logs:
+        pid = entry.get("prompt_id")
         counts[pid] = counts.get(pid, 0) + 1
 
     top = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:limit]
     results = []
     for pid, count in top:
         p = prompt_map.get(pid, {})
-        results.append({
-            "prompt_id": pid,
-            "slug": p.get("slug", "unknown"),
-            "name": p.get("name", "unknown"),
-            "type": p.get("type", "unknown"),
-            "usage_count": count,
-        })
+        results.append(
+            {
+                "prompt_id": pid,
+                "slug": p.get("slug", "unknown"),
+                "name": p.get("name", "unknown"),
+                "type": p.get("type", "unknown"),
+                "usage_count": count,
+            }
+        )
     return results
 
 
@@ -141,24 +145,26 @@ async def version_performance(
 
     # Group by version
     by_version: dict[str, list[dict]] = {}
-    for l in logs:
-        vid = l.get("version_id")
-        by_version.setdefault(vid, []).append(l)
+    for entry in logs:
+        vid = entry.get("version_id")
+        by_version.setdefault(vid, []).append(entry)
 
     results = []
     for vid, vlogs in by_version.items():
         total = len(vlogs)
-        successes = sum(1 for l in vlogs if l.get("outcome") == "success")
-        failures = sum(1 for l in vlogs if l.get("outcome") == "failure")
-        latencies = [l["latency_ms"] for l in vlogs if l.get("latency_ms") is not None]
-        results.append({
-            "version_id": vid,
-            "version_number": version_map.get(vid, "?"),
-            "total_uses": total,
-            "successes": successes,
-            "failures": failures,
-            "success_rate": round(successes / total, 3) if total else 0,
-            "avg_latency_ms": round(sum(latencies) / len(latencies), 1) if latencies else None,
-        })
+        successes = sum(1 for entry in vlogs if entry.get("outcome") == "success")
+        failures = sum(1 for entry in vlogs if entry.get("outcome") == "failure")
+        latencies = [entry["latency_ms"] for entry in vlogs if entry.get("latency_ms") is not None]
+        results.append(
+            {
+                "version_id": vid,
+                "version_number": version_map.get(vid, "?"),
+                "total_uses": total,
+                "successes": successes,
+                "failures": failures,
+                "success_rate": round(successes / total, 3) if total else 0,
+                "avg_latency_ms": round(sum(latencies) / len(latencies), 1) if latencies else None,
+            }
+        )
 
     return sorted(results, key=lambda r: r.get("version_number", 0))

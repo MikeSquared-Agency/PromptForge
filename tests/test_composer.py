@@ -1,7 +1,5 @@
 """Tests for the composition engine."""
 
-import pytest
-
 from prompt_forge.core.composer import CompositionEngine
 from prompt_forge.core.registry import PromptRegistry
 from prompt_forge.core.resolver import PromptResolver
@@ -21,7 +19,8 @@ class TestCompositionEngine:
         vcs.commit(
             prompt["id"],
             {"sections": [{"id": "main", "content": text}]},
-            "init", "test",
+            "init",
+            "test",
         )
 
     def test_compose_basic(self, mock_db):
@@ -41,9 +40,12 @@ class TestCompositionEngine:
 
     def test_compose_with_variables(self, mock_db):
         registry, vcs, composer = self._setup(mock_db)
-        self._create_component(registry, vcs, "reviewer", "persona", "Review {{project_name}} code.")
+        self._create_component(
+            registry, vcs, "reviewer", "persona", "Review {{project_name}} code."
+        )
         result = composer.compose(
-            persona_slug="reviewer", variables={"project_name": "PromptForge"},
+            persona_slug="reviewer",
+            variables={"project_name": "PromptForge"},
         )
         assert "PromptForge" in result["prompt"]
         assert "{{project_name}}" not in result["prompt"]

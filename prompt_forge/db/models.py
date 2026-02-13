@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 class PromptRow(BaseModel):
     """Row from the prompts table."""
+
     id: UUID
     slug: str
     name: str
@@ -28,6 +29,7 @@ class PromptRow(BaseModel):
 
 class VersionRow(BaseModel):
     """Row from the prompt_versions table."""
+
     id: UUID
     prompt_id: UUID
     version: int
@@ -41,6 +43,7 @@ class VersionRow(BaseModel):
 
 class BranchRow(BaseModel):
     """Row from the prompt_branches table."""
+
     id: UUID
     prompt_id: UUID
     name: str
@@ -53,6 +56,7 @@ class BranchRow(BaseModel):
 
 class UsageLogRow(BaseModel):
     """Row from the prompt_usage_log table."""
+
     id: UUID
     prompt_id: UUID
     version_id: UUID

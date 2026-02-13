@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any
 
@@ -17,6 +16,7 @@ logger = structlog.get_logger()
 @dataclass
 class AuditEntry:
     """An audit log entry."""
+
     id: str
     action: str
     entity_type: str
@@ -94,16 +94,18 @@ class AuditLogger:
                 continue
             if until and created > until:
                 continue
-            entries.append(AuditEntry(
-                id=row["id"],
-                action=row["action"],
-                entity_type=row["entity_type"],
-                entity_id=row.get("entity_id"),
-                actor=row["actor"],
-                details=row.get("details", {}),
-                ip_address=row.get("ip_address"),
-                created_at=created,
-            ))
+            entries.append(
+                AuditEntry(
+                    id=row["id"],
+                    action=row["action"],
+                    entity_type=row["entity_type"],
+                    entity_id=row.get("entity_id"),
+                    actor=row["actor"],
+                    details=row.get("details", {}),
+                    ip_address=row.get("ip_address"),
+                    created_at=created,
+                )
+            )
 
         return entries[:limit]
 

@@ -10,7 +10,9 @@ import httpx
 class ForgeClient:
     """HTTP client wrapping all PromptForge API endpoints."""
 
-    def __init__(self, base_url: str = "http://localhost:8100", auth_token: str | None = None) -> None:
+    def __init__(
+        self, base_url: str = "http://localhost:8100", auth_token: str | None = None
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         headers = {}
         if auth_token:
@@ -48,19 +50,25 @@ class ForgeClient:
         return self._handle(self._client.post(f"/prompts/{slug}/versions", json=data))
 
     def list_versions(self, slug: str, branch: str = "main") -> list[dict]:
-        return self._handle(self._client.get(f"/prompts/{slug}/versions", params={"branch": branch}))
+        return self._handle(
+            self._client.get(f"/prompts/{slug}/versions", params={"branch": branch})
+        )
 
     def diff_versions(self, slug: str, v1: int, v2: int, branch: str = "main") -> dict:
-        return self._handle(self._client.get(
-            f"/prompts/{slug}/diff",
-            params={"from": v1, "to": v2, "branch": branch},
-        ))
+        return self._handle(
+            self._client.get(
+                f"/prompts/{slug}/diff",
+                params={"from": v1, "to": v2, "branch": branch},
+            )
+        )
 
     def rollback(self, slug: str, version: int, author: str = "system") -> dict:
-        return self._handle(self._client.post(
-            f"/prompts/{slug}/rollback",
-            json={"version": version, "author": author},
-        ))
+        return self._handle(
+            self._client.post(
+                f"/prompts/{slug}/rollback",
+                json={"version": version, "author": author},
+            )
+        )
 
     # --- Composition ---
 
@@ -73,7 +81,9 @@ class ForgeClient:
     # --- Scanning ---
 
     def scan(self, content: dict, sensitivity: str = "normal") -> dict:
-        return self._handle(self._client.post("/scan", json={"content": content, "sensitivity": sensitivity}))
+        return self._handle(
+            self._client.post("/scan", json={"content": content, "sensitivity": sensitivity})
+        )
 
     # --- Audit ---
 

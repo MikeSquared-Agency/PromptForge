@@ -54,6 +54,7 @@ async def lifespan(app: FastAPI):
     # Initialize NATS event publisher (optional)
     try:
         from prompt_forge.core.events import get_event_publisher
+
         publisher = get_event_publisher()
         await publisher.connect()
     except Exception as e:
@@ -75,6 +76,7 @@ async def lifespan(app: FastAPI):
     # Disconnect NATS
     try:
         from prompt_forge.core.events import get_event_publisher
+
         publisher = get_event_publisher()
         await publisher.disconnect()
     except Exception:

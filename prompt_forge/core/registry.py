@@ -99,7 +99,8 @@ class PromptRegistry:
         if search:
             search_lower = search.lower()
             results = [
-                r for r in results
+                r
+                for r in results
                 if search_lower in r.get("name", "").lower()
                 or search_lower in r.get("description", "").lower()
                 or search_lower in r.get("slug", "").lower()
@@ -166,6 +167,7 @@ class PromptRegistry:
 
         # Resolve content for each prompt in the chain
         from prompt_forge.core.vcs import VersionControl
+
         vcs = VersionControl(self.db)
 
         # Build merged content starting from the root ancestor

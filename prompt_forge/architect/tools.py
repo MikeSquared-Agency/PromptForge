@@ -19,7 +19,10 @@ def get_tool_declarations() -> list[dict[str, Any]]:
                 "properties": {
                     "slug": {"type": "string", "description": "Unique identifier"},
                     "name": {"type": "string", "description": "Display name"},
-                    "type": {"type": "string", "enum": ["persona", "skill", "constraint", "template", "meta"]},
+                    "type": {
+                        "type": "string",
+                        "enum": ["persona", "skill", "constraint", "template", "meta"],
+                    },
                     "content": {"type": "object", "description": "Structured prompt content"},
                     "description": {"type": "string"},
                     "tags": {"type": "array", "items": {"type": "string"}},

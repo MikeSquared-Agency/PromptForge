@@ -7,7 +7,6 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from fastapi.responses import JSONResponse
 
 from prompt_forge.api.models import (
     DiffResponse,
@@ -43,19 +42,23 @@ async def _auto_subscribe(
     if not agent_id:
         return
     existing = [
-        r for r in db.select("prompt_subscriptions", filters={"prompt_id": prompt_id})
+        r
+        for r in db.select("prompt_subscriptions", filters={"prompt_id": prompt_id})
         if r["agent_id"] == agent_id
     ]
     now = datetime.now(timezone.utc).isoformat()
     if existing:
         db.update("prompt_subscriptions", existing[0]["id"], {"last_pulled_at": now})
     else:
-        db.insert("prompt_subscriptions", {
-            "prompt_id": prompt_id,
-            "agent_id": agent_id,
-            "subscribed_at": now,
-            "last_pulled_at": now,
-        })
+        db.insert(
+            "prompt_subscriptions",
+            {
+                "prompt_id": prompt_id,
+                "agent_id": agent_id,
+                "subscribed_at": now,
+                "last_pulled_at": now,
+            },
+        )
 
 
 async def _notify_subscribers(
@@ -70,6 +73,7 @@ async def _notify_subscribers(
     """Publish targeted events to all subscribers."""
     try:
         from prompt_forge.core.events import get_event_publisher
+
         publisher = get_event_publisher()
         if not publisher._connected:
             return
@@ -90,7 +94,9 @@ async def _notify_subscribers(
                     "priority": priority,
                 },
             )
-            logger.info("subscription.notified", agent_id=agent_id, slug=slug, new_version=new_version)
+            logger.info(
+                "subscription.notified", agent_id=agent_id, slug=slug, new_version=new_version
+            )
     except Exception as e:
         logger.warning("subscription.notify_failed", error=str(e))
 
@@ -104,6 +110,7 @@ async def _emit_regression_event(
     """Emit Hermes events for regression warnings/blocks."""
     try:
         from prompt_forge.core.events import get_event_publisher
+
         publisher = get_event_publisher()
         if not publisher._connected:
             return
@@ -135,9 +142,7 @@ def _run_regression_guard(
     regression = regression_check(parent_content, new_content)
 
     if regression["block"] and not acknowledge_reduction:
-        keys_unchanged = sorted(
-            set(parent_content.keys()) & set(new_content.keys())
-        )
+        keys_unchanged = sorted(set(parent_content.keys()) & set(new_content.keys()))
         raise HTTPException(
             status_code=409,
             detail={
@@ -199,9 +204,7 @@ async def create_version(
     # Build response with warnings
     warnings = None
     if regression and regression["warn"]:
-        warnings = [
-            RegressionWarning(**w) for w in regression["warnings"]
-        ]
+        warnings = [RegressionWarning(**w) for w in regression["warnings"]]
         await _emit_regression_event(slug, "warning", regression, data.author)
 
     # Notify subscribers
@@ -265,9 +268,7 @@ async def patch_version(
     # Build response with warnings
     warnings = None
     if regression["warn"]:
-        warnings = [
-            RegressionWarning(**w) for w in regression["warnings"]
-        ]
+        warnings = [RegressionWarning(**w) for w in regression["warnings"]]
         await _emit_regression_event(slug, "warning", regression, data.author)
 
     # Notify subscribers
@@ -377,8 +378,10 @@ async def field_diff_versions(
 
     differ = StructuralDiffer()
     result = differ.field_diff(
-        v_from["content"], v_to["content"],
-        from_version=version_a, to_version=version_b,
+        v_from["content"],
+        v_to["content"],
+        from_version=version_a,
+        to_version=version_b,
     )
 
     return FieldDiffResponse(**result)
@@ -472,9 +475,7 @@ async def restore_version(
     # Build response with warnings
     warnings = None
     if regression and regression["warn"]:
-        warnings = [
-            RegressionWarning(**w) for w in regression["warnings"]
-        ]
+        warnings = [RegressionWarning(**w) for w in regression["warnings"]]
         await _emit_regression_event(slug, "warning", regression, data.author)
 
     # Notify subscribers

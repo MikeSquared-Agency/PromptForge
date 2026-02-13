@@ -1,7 +1,5 @@
 """Tests for version control system."""
 
-import pytest
-
 from prompt_forge.core.registry import PromptRegistry
 from prompt_forge.core.vcs import (
     VersionControl,
@@ -46,7 +44,7 @@ class TestVersionControl:
         prompt = self._create_prompt(mock_db)
         vcs = VersionControl(mock_db)
         for i in range(5):
-            vcs.commit(prompt["id"], sample_content, f"v{i+1}", "author")
+            vcs.commit(prompt["id"], sample_content, f"v{i + 1}", "author")
         history = vcs.history(prompt["id"], limit=2)
         assert len(history) == 2
 

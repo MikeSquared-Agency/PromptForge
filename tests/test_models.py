@@ -47,16 +47,22 @@ class TestComposeRequest:
 class TestUsageLogCreate:
     def test_valid_outcome(self):
         from uuid import uuid4
+
         u = UsageLogCreate(
-            prompt_id=uuid4(), version_id=uuid4(),
-            agent_id="worker-1", outcome="success",
+            prompt_id=uuid4(),
+            version_id=uuid4(),
+            agent_id="worker-1",
+            outcome="success",
         )
         assert u.outcome == "success"
 
     def test_invalid_outcome(self):
         from uuid import uuid4
+
         with pytest.raises(ValidationError):
             UsageLogCreate(
-                prompt_id=uuid4(), version_id=uuid4(),
-                agent_id="worker-1", outcome="bad",
+                prompt_id=uuid4(),
+                version_id=uuid4(),
+                agent_id="worker-1",
+                outcome="bad",
             )
