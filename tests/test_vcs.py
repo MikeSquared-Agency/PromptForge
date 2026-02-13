@@ -3,7 +3,12 @@
 import pytest
 
 from prompt_forge.core.registry import PromptRegistry
-from prompt_forge.core.vcs import VersionControl, merge_content, regression_check
+from prompt_forge.core.vcs import (
+    VersionControl,
+    _normalise_content,
+    merge_content,
+    regression_check,
+)
 
 
 class TestVersionControl:
@@ -233,3 +238,37 @@ class TestRegressionCheck:
         result = regression_check({}, {"a": "new"})
         assert result["block"] is False
         assert result["content_reduction_pct"] == 0.0
+
+
+class TestNormaliseContent:
+    """Unit tests for _normalise_content — Bug 1 fix."""
+
+    def test_dict_passes_through(self):
+        content = {"voice": "Warm", "identity": "Kai"}
+        assert _normalise_content(content) == content
+
+    def test_json_string_is_parsed(self):
+        content = '{"voice": "Warm", "identity": "Kai"}'
+        result = _normalise_content(content)
+        assert result == {"voice": "Warm", "identity": "Kai"}
+
+    def test_none_returns_empty_dict(self):
+        assert _normalise_content(None) == {}
+
+    def test_invalid_string_wrapped(self):
+        result = _normalise_content("not valid json")
+        assert result == {"_raw": "not valid json"}
+
+    def test_non_dict_json_string_wrapped(self):
+        result = _normalise_content('"just a string"')
+        assert result == {"_raw": '"just a string"'}
+
+    def test_string_with_control_chars_parsed(self):
+        content = '{"voice": "Warm\\nand friendly"}'
+        result = _normalise_content(content)
+        assert result == {"voice": "Warm\nand friendly"}
+
+    def test_dict_with_control_chars_preserved(self):
+        content = {"voice": "Warm\nand friendly\twith tabs"}
+        result = _normalise_content(content)
+        assert result["voice"] == "Warm\nand friendly\twith tabs"

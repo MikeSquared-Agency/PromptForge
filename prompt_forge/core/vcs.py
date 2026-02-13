@@ -14,6 +14,39 @@ from prompt_forge.db.client import SupabaseClient, get_supabase_client
 logger = structlog.get_logger()
 
 
+def _normalise_content(content: Any) -> dict[str, Any]:
+    """Ensure content is always a proper dict.
+
+    Handles edge cases where Supabase returns JSONB content as:
+    - A JSON-encoded string (double-serialised)
+    - None / missing
+    """
+    if content is None:
+        return {}
+    if isinstance(content, str):
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict):
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return {"_raw": content}
+    if isinstance(content, dict):
+        return content
+    return {"_raw": str(content)}
+
+
+def _normalise_version(version: dict[str, Any]) -> dict[str, Any]:
+    """Normalise a version record from the database.
+
+    Ensures the content field is always a properly-typed dict so that
+    FastAPI/Pydantic serialisation produces valid JSON with all control
+    characters properly escaped.
+    """
+    version["content"] = _normalise_content(version.get("content"))
+    return version
+
+
 def merge_content(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
     """Merge patch into base content following spec rules.
 
@@ -193,7 +226,7 @@ class VersionControl:
                 for f in scan_result.findings
             ]
 
-        return version
+        return _normalise_version(version)
 
     def history(
         self,
@@ -202,13 +235,14 @@ class VersionControl:
         limit: int = 50,
     ) -> list[dict[str, Any]]:
         """Get version history for a prompt on a branch."""
-        return self.db.select(
+        rows = self.db.select(
             "prompt_versions",
             filters={"prompt_id": prompt_id, "branch": branch},
             order_by="version",
             ascending=False,
             limit=limit,
         )
+        return [_normalise_version(r) for r in rows]
 
     def get_version(
         self,
@@ -221,7 +255,7 @@ class VersionControl:
             "prompt_versions",
             filters={"prompt_id": prompt_id, "version": version, "branch": branch},
         )
-        return results[0] if results else None
+        return _normalise_version(results[0]) if results else None
 
     def rollback(
         self,

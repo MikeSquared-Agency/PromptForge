@@ -302,6 +302,30 @@ async def list_versions(
     return [VersionResponse(**v) for v in versions]
 
 
+@router.get("/{slug}/versions/latest", response_model=VersionResponse)
+async def get_latest_version(
+    slug: str,
+    branch: str = "main",
+    x_agent_id: str | None = Header(default=None, alias="X-Agent-ID"),
+    registry: PromptRegistry = Depends(get_registry),
+    vcs: VersionControl = Depends(get_vcs),
+    db: SupabaseClient = Depends(get_supabase_client),
+) -> VersionResponse:
+    """Get the latest version of a prompt on a branch."""
+    prompt = registry.get_prompt(slug)
+    if not prompt:
+        raise HTTPException(status_code=404, detail=f"Prompt '{slug}' not found")
+
+    history = vcs.history(prompt_id=str(prompt["id"]), branch=branch, limit=1)
+    if not history:
+        raise HTTPException(status_code=404, detail=f"No versions found on branch '{branch}'")
+
+    # Auto-subscribe
+    await _auto_subscribe(str(prompt["id"]), x_agent_id, db)
+
+    return VersionResponse(**history[0])
+
+
 @router.get("/{slug}/versions/{version}", response_model=VersionResponse)
 async def get_version(
     slug: str,
