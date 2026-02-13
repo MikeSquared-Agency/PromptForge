@@ -59,6 +59,35 @@ class VersionCreate(BaseModel):
     branch: str = "main"
     override_sections: dict[str, Any] | None = None
     priority: str = "normal"
+    acknowledge_reduction: bool = False
+
+
+class VersionPatch(BaseModel):
+    """Partial version update — merges into latest version's content."""
+    content: dict[str, Any]
+    message: str = "Update"
+    author: str = "system"
+    branch: str = "main"
+    priority: str = "normal"
+    acknowledge_reduction: bool = False
+
+
+class VersionRestoreRequest(BaseModel):
+    """Restore a historical version, optionally merging with a patch."""
+    from_version: int
+    patch: dict[str, Any] | None = None
+    message: str | None = None
+    author: str = "system"
+    branch: str = "main"
+    priority: str = "normal"
+    acknowledge_reduction: bool = False
+
+
+class RegressionWarning(BaseModel):
+    """A single regression warning."""
+    type: str
+    detail: Any
+    message: str
 
 
 class VersionResponse(BaseModel):
@@ -72,15 +101,24 @@ class VersionResponse(BaseModel):
     parent_version_id: UUID | None
     branch: str
     created_at: datetime
+    warnings: list[RegressionWarning] | None = None
 
 
 class DiffResponse(BaseModel):
-    """Structural diff between two versions."""
+    """Structural diff between two versions (section-level)."""
     prompt_id: UUID
     from_version: int
     to_version: int
     changes: list[dict[str, Any]]
     summary: str
+
+
+class FieldDiffResponse(BaseModel):
+    """Field-level diff between two versions (top-level keys)."""
+    from_version: int
+    to_version: int
+    changes: list[dict[str, Any]]
+    summary: dict[str, Any]
 
 
 class RollbackRequest(BaseModel):

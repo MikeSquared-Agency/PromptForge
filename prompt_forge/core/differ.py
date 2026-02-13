@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from difflib import SequenceMatcher
 from typing import Any
 
@@ -92,6 +93,73 @@ class StructuralDiffer:
         return {
             "changes": changes,
             "summary": ", ".join(parts) if parts else "No changes",
+        }
+
+    def field_diff(
+        self,
+        old_content: dict[str, Any],
+        new_content: dict[str, Any],
+        from_version: int,
+        to_version: int,
+    ) -> dict[str, Any]:
+        """Compute a field-level diff comparing top-level keys between versions.
+
+        Returns the format specified in the version-safety spec:
+        changes array with field/action/from_length/to_length, and summary.
+        """
+        old_keys = set(old_content.keys())
+        new_keys = set(new_content.keys())
+
+        changes: list[dict[str, Any]] = []
+
+        # Removed fields
+        for key in sorted(old_keys - new_keys):
+            changes.append({"field": key, "action": "removed"})
+
+        # Added fields
+        for key in sorted(new_keys - old_keys):
+            changes.append({"field": key, "action": "added"})
+
+        # Shared fields: modified or unchanged
+        modified_count = 0
+        unchanged_count = 0
+        for key in sorted(old_keys & new_keys):
+            old_val = old_content[key]
+            new_val = new_content[key]
+            if old_val == new_val:
+                unchanged_count += 1
+            else:
+                old_len = len(json.dumps(old_val, ensure_ascii=False))
+                new_len = len(json.dumps(new_val, ensure_ascii=False))
+                changes.append({
+                    "field": key,
+                    "action": "modified",
+                    "from_length": old_len,
+                    "to_length": new_len,
+                })
+                modified_count += 1
+
+        added_count = len(new_keys - old_keys)
+        removed_count = len(old_keys - new_keys)
+
+        old_total = len(json.dumps(old_content, ensure_ascii=False))
+        new_total = len(json.dumps(new_content, ensure_ascii=False))
+        if old_total > 0:
+            content_change_pct = round((new_total - old_total) / old_total * 100, 1)
+        else:
+            content_change_pct = 0.0
+
+        return {
+            "from_version": from_version,
+            "to_version": to_version,
+            "changes": changes,
+            "summary": {
+                "added": added_count,
+                "removed": removed_count,
+                "modified": modified_count,
+                "unchanged": unchanged_count,
+                "content_change_pct": content_change_pct,
+            },
         }
 
     def human_readable(self, diff_result: dict[str, Any]) -> str:

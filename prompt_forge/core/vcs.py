@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from typing import Any
 
@@ -11,6 +12,114 @@ from prompt_forge.core.scanner import PromptScanner
 from prompt_forge.db.client import SupabaseClient, get_supabase_client
 
 logger = structlog.get_logger()
+
+
+def merge_content(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
+    """Merge patch into base content following spec rules.
+
+    - Top-level string/array fields: new value replaces old
+    - Top-level object fields: deep merge (recursive)
+    - Omitted fields: preserved from base
+    - Explicit null: removes the field
+    """
+    result = dict(base)
+    for key, value in patch.items():
+        if value is None:
+            result.pop(key, None)
+        elif isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = merge_content(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def _content_length(content: dict[str, Any]) -> int:
+    """Total character length of serialised content."""
+    return len(json.dumps(content, ensure_ascii=False))
+
+
+def regression_check(
+    parent_content: dict[str, Any],
+    new_content: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare new content against parent and return regression metrics.
+
+    Returns dict with:
+      - keys_removed, keys_added, fields_emptied: lists
+      - content_reduction_pct: float (0-100, 0 means no reduction)
+      - warn: bool (any keys removed or >20% reduction)
+      - block: bool (>50% content reduction or >50% keys removed)
+      - warnings: list of warning dicts for the response
+    """
+    parent_keys = set(parent_content.keys())
+    new_keys = set(new_content.keys())
+
+    keys_removed = sorted(parent_keys - new_keys)
+    keys_added = sorted(new_keys - parent_keys)
+
+    # Fields that went from non-empty to empty string/array
+    fields_emptied = []
+    for key in parent_keys & new_keys:
+        old_val = parent_content[key]
+        new_val = new_content[key]
+        if old_val and not new_val:
+            if isinstance(new_val, (str, list)):
+                fields_emptied.append(key)
+
+    parent_chars = _content_length(parent_content)
+    new_chars = _content_length(new_content)
+    if parent_chars > 0 and new_chars < parent_chars:
+        content_reduction_pct = round((1 - new_chars / parent_chars) * 100, 1)
+    else:
+        content_reduction_pct = 0.0
+
+    keys_removed_pct = (
+        (len(keys_removed) / len(parent_keys) * 100) if parent_keys else 0.0
+    )
+
+    # Build warnings list
+    warnings: list[dict[str, Any]] = []
+    if keys_removed:
+        warnings.append({
+            "type": "keys_removed",
+            "detail": keys_removed,
+            "message": f"{len(keys_removed)} keys from parent version were removed",
+        })
+    if fields_emptied:
+        warnings.append({
+            "type": "fields_emptied",
+            "detail": fields_emptied,
+            "message": f"{len(fields_emptied)} fields were emptied",
+        })
+    if content_reduction_pct > 20:
+        warnings.append({
+            "type": "content_reduction",
+            "detail": {
+                "parent_chars": parent_chars,
+                "new_chars": new_chars,
+                "reduction_pct": content_reduction_pct,
+            },
+            "message": (
+                f"Content reduced by {content_reduction_pct}%. "
+                "Pass acknowledge_reduction: true if intentional."
+            ),
+        })
+
+    warn = bool(keys_removed) or content_reduction_pct > 20
+    block = content_reduction_pct > 50 or keys_removed_pct > 50
+
+    return {
+        "keys_removed": keys_removed,
+        "keys_added": keys_added,
+        "fields_emptied": fields_emptied,
+        "content_reduction_pct": content_reduction_pct,
+        "keys_removed_pct": keys_removed_pct,
+        "parent_chars": parent_chars,
+        "new_chars": new_chars,
+        "warn": warn,
+        "block": block,
+        "warnings": warnings,
+    }
 
 
 class VersionControl:
