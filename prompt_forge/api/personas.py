@@ -43,9 +43,7 @@ async def get_persona_version(
 ) -> VersionResponse:
     """Get a specific version of a persona prompt."""
     try:
-        result = resolver.resolve(
-            slug=persona, branch=branch, version=version, strategy="pinned"
-        )
+        result = resolver.resolve(slug=persona, branch=branch, version=version, strategy="pinned")
         return VersionResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

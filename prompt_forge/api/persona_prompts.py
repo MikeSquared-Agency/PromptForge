@@ -19,7 +19,7 @@ async def get_persona_prompt_latest(
     prompt = store.get_latest_persona_prompt(persona)
     if not prompt:
         raise HTTPException(status_code=404, detail=f"Persona '{persona}' not found")
-    
+
     return PersonaPromptResponse(**prompt.model_dump())
 
 
@@ -44,7 +44,7 @@ async def list_persona_prompt_versions(
     prompts = store.list_persona_versions(persona)
     if not prompts:
         raise HTTPException(status_code=404, detail=f"Persona '{persona}' not found")
-    
+
     return [PersonaPromptResponse(**prompt.model_dump()) for prompt in prompts]
 
 
@@ -72,8 +72,7 @@ async def get_persona_prompt_version(
     prompt = store.get_persona_prompt_version(persona, version)
     if not prompt:
         raise HTTPException(
-            status_code=404, 
-            detail=f"Persona '{persona}' version {version} not found"
+            status_code=404, detail=f"Persona '{persona}' version {version} not found"
         )
-    
+
     return PersonaPromptResponse(**prompt.model_dump())

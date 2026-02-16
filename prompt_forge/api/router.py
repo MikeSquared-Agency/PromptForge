@@ -21,7 +21,9 @@ api_router.include_router(prompts_router, prefix="/prompts", tags=["prompts"])
 api_router.include_router(versions_router, prefix="/prompts", tags=["versions"])
 api_router.include_router(branches_router, prefix="/prompts", tags=["branches"])
 api_router.include_router(subscriptions_router, prefix="/prompts", tags=["subscriptions"])
-api_router.include_router(persona_prompts_router, prefix="/persona-prompts", tags=["persona-prompts"])
+api_router.include_router(
+    persona_prompts_router, prefix="/persona-prompts", tags=["persona-prompts"]
+)
 api_router.include_router(agents_router, prefix="/agents", tags=["agents"])
 api_router.include_router(compose_router, tags=["composition"])
 api_router.include_router(usage_router, prefix="/usage", tags=["usage"])

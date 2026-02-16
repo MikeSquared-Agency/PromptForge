@@ -31,16 +31,16 @@ class MockSupabaseClient(SupabaseClient):
     def client(self):
         """Mock the client.table().update().eq() pattern used in persona store."""
         mock_client = MagicMock()
-        
+
         def mock_table(table_name):
             table_mock = MagicMock()
-            
+
             def mock_update(data):
                 update_mock = MagicMock()
-                
+
                 def mock_eq(column, value):
                     eq_mock = MagicMock()
-                    
+
                     def mock_execute():
                         # Handle bulk updates for persona_prompts
                         if table_name == "persona_prompts" and column == "persona":
@@ -48,16 +48,16 @@ class MockSupabaseClient(SupabaseClient):
                                 if row.get(column) == value:
                                     row.update(data)
                         return MagicMock()
-                    
+
                     eq_mock.execute = mock_execute
                     return eq_mock
-                
+
                 update_mock.eq = mock_eq
                 return update_mock
-            
+
             table_mock.update = mock_update
             return table_mock
-        
+
         mock_client.table = mock_table
         return mock_client
 

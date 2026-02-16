@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-from uuid import UUID
 
 import structlog
 
@@ -56,9 +54,11 @@ class PersonaPromptStore:
         # Mark all existing versions as not latest
         if existing_rows:
             # Update all existing versions to not be latest
-            query = self.db.client.table("persona_prompts").update(
-                {"is_latest": False}
-            ).eq("persona", persona)
+            query = (
+                self.db.client.table("persona_prompts")
+                .update({"is_latest": False})
+                .eq("persona", persona)
+            )
             query.execute()
 
         # Create the new version
@@ -76,7 +76,7 @@ class PersonaPromptStore:
             version=next_version,
             id=row_data["id"],
         )
-        
+
         return PersonaPromptRow(**row_data)
 
     def list_persona_versions(self, persona: str) -> list[PersonaPromptRow]:
@@ -105,7 +105,6 @@ Scope paths: {{scope_paths}}
 Alexandria context: {{alexandria_context}}
 
 Focus on thorough research, fact-checking, and providing comprehensive information with proper citations and sources.""",
-
             "developer": """You are a Developer persona with expertise in software engineering and coding.
 
 Your objective: {{objective}}
@@ -119,7 +118,6 @@ Scope paths: {{scope_paths}}
 Alexandria context: {{alexandria_context}}
 
 Focus on clean, efficient code, best practices, testing, and maintainable solutions. Provide working code examples and explanations.""",
-
             "reviewer": """You are a Reviewer persona with expertise in code review and quality assurance.
 
 Your objective: {{objective}}
@@ -133,7 +131,6 @@ Scope paths: {{scope_paths}}
 Alexandria context: {{alexandria_context}}
 
 Focus on thorough code review, identifying issues, suggesting improvements, and ensuring quality standards are met.""",
-
             "tester": """You are a Tester persona with expertise in testing strategies and quality assurance.
 
 Your objective: {{objective}}
@@ -147,7 +144,6 @@ Scope paths: {{scope_paths}}
 Alexandria context: {{alexandria_context}}
 
 Focus on comprehensive testing strategies, test case design, bug identification, and ensuring software quality through rigorous testing.""",
-
             "architect": """You are an Architect persona with expertise in system design and technical architecture.
 
 Your objective: {{objective}}
