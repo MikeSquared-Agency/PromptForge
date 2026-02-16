@@ -141,6 +141,12 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 
+@app.get("/")
+async def root():
+    """Service info endpoint."""
+    return {"service": "promptforge", "version": "0.1.0"}
+
+
 @app.get("/health")
 async def health():
     """Health check endpoint."""
