@@ -65,6 +65,7 @@ async def lifespan(app: FastAPI):
     # Initialize NATS effectiveness subscribers (optional)
     try:
         from prompt_forge.core.subscribers import get_effectiveness_subscriber
+
         subscriber = get_effectiveness_subscriber()
         if await subscriber.connect():
             await subscriber.start()
@@ -78,12 +79,14 @@ async def lifespan(app: FastAPI):
     global _analyser_task, _autonomy_task
     try:
         from prompt_forge.core.analyser import run_analyser_loop
+
         _analyser_task = asyncio.create_task(run_analyser_loop())
     except Exception as e:
         logger.info("promptforge.analyser_skipped", reason=str(e))
 
     try:
         from prompt_forge.core.autonomy import run_autonomy_loop
+
         _autonomy_task = asyncio.create_task(run_autonomy_loop())
     except Exception as e:
         logger.info("promptforge.autonomy_skipped", reason=str(e))
@@ -102,6 +105,7 @@ async def lifespan(app: FastAPI):
     # Disconnect NATS subscribers
     try:
         from prompt_forge.core.subscribers import get_effectiveness_subscriber
+
         subscriber = get_effectiveness_subscriber()
         await subscriber.stop()
     except Exception:

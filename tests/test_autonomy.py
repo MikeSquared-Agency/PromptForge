@@ -24,9 +24,7 @@ class TestAnalyseAutonomyCandidates:
 
     @pytest.mark.asyncio
     async def test_flags_high_alignment(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db)
         # 20 sessions, 1 with intervention (95% alignment)
         self._seed(mock_db, "developer", 20, 1)
         candidates = await analyse_autonomy_candidates()
@@ -36,9 +34,7 @@ class TestAnalyseAutonomyCandidates:
 
     @pytest.mark.asyncio
     async def test_no_flag_low_alignment(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db)
         # 20 sessions, 5 with intervention (75% alignment)
         self._seed(mock_db, "developer", 20, 5)
         candidates = await analyse_autonomy_candidates()
@@ -46,9 +42,7 @@ class TestAnalyseAutonomyCandidates:
 
     @pytest.mark.asyncio
     async def test_no_flag_insufficient_sessions(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db)
         # Only 5 sessions (below threshold of 10)
         self._seed(mock_db, "developer", 5, 0)
         candidates = await analyse_autonomy_candidates()
@@ -56,17 +50,13 @@ class TestAnalyseAutonomyCandidates:
 
     @pytest.mark.asyncio
     async def test_empty_data(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db)
         candidates = await analyse_autonomy_candidates()
         assert candidates == []
 
     @pytest.mark.asyncio
     async def test_multiple_agents(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.autonomy.get_supabase_client", lambda: mock_db)
         # developer: 95% alignment (candidate)
         self._seed(mock_db, "developer", 20, 1)
         # reviewer: 70% alignment (not candidate)

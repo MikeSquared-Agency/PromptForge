@@ -68,7 +68,9 @@ async def update_effectiveness(
 
 @router.get("/effectiveness/summary", response_model=list[EffectivenessSummary])
 async def effectiveness_summary(
-    group_by: str = Query(default="version_id", pattern=r"^(version_id|model_id|agent_id|model_tier)$"),
+    group_by: str = Query(
+        default="version_id", pattern=r"^(version_id|model_id|agent_id|model_tier)$"
+    ),
     prompt_id: UUID | None = None,
     model_id: str | None = None,
     agent_id: str | None = None,
@@ -171,7 +173,8 @@ async def prompt_version_effectiveness(
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
     rows = db.select("prompt_effectiveness")
     filtered = [
-        r for r in rows
+        r
+        for r in rows
         if r.get("prompt_id") == str(prompt_id) and r.get("created_at", "") >= cutoff
     ]
 
@@ -206,6 +209,7 @@ async def prompt_version_effectiveness(
 async def compression_candidates() -> list[dict[str, Any]]:
     """Prompt versions flagged as verbose (>2x median tokens)."""
     from prompt_forge.core.analyser import analyse_verbose_prompts
+
     return await analyse_verbose_prompts()
 
 
@@ -213,6 +217,7 @@ async def compression_candidates() -> list[dict[str, Any]]:
 async def autonomy_candidates() -> list[dict[str, Any]]:
     """Agents where human intervention is low enough for autonomy expansion."""
     from prompt_forge.core.autonomy import analyse_autonomy_candidates
+
     return await analyse_autonomy_candidates()
 
 
@@ -243,12 +248,14 @@ async def mission_cost_breakdown(
     for tid, records in by_task.items():
         stage_cost = sum(r.get("cost_usd", 0) or 0 for r in records)
         stage_tokens = sum(r.get("total_tokens", 0) or 0 for r in records)
-        stages.append({
-            "task_id": tid,
-            "cost_usd": stage_cost,
-            "total_tokens": stage_tokens,
-            "session_count": len(records),
-        })
+        stages.append(
+            {
+                "task_id": tid,
+                "cost_usd": stage_cost,
+                "total_tokens": stage_tokens,
+                "session_count": len(records),
+            }
+        )
 
     return {
         "mission_id": mission_id,
@@ -270,7 +277,8 @@ async def discovery_accuracy(
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
     rows = db.select("prompt_effectiveness")
     filtered = [
-        r for r in rows
+        r
+        for r in rows
         if r.get("created_at", "") >= cutoff
         and r.get("mission_id")
         and r.get("outcome_score") is not None
@@ -289,13 +297,15 @@ async def discovery_accuracy(
         initial = sorted_recs[0].get("outcome_score", 0) or 0
         final = sorted_recs[-1].get("outcome_score", 0) or 0
         accuracy = 1 - abs(initial - final) / max(initial, 0.001) if initial > 0 else None
-        results.append({
-            "mission_id": mid,
-            "initial_score": initial,
-            "final_score": final,
-            "discovery_accuracy": accuracy,
-            "session_count": len(sorted_recs),
-        })
+        results.append(
+            {
+                "mission_id": mid,
+                "initial_score": initial,
+                "final_score": final,
+                "discovery_accuracy": accuracy,
+                "session_count": len(sorted_recs),
+            }
+        )
     return results
 
 

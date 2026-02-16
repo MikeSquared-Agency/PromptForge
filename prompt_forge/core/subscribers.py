@@ -18,6 +18,7 @@ logger = structlog.get_logger()
 _nats_available = False
 try:
     import nats as nats_lib
+
     _nats_available = True
 except ImportError:
     pass
@@ -51,9 +52,14 @@ class EffectivenessSubscriber:
 
         sub1 = await self._nc.subscribe("swarm.usage.tokens", cb=self._handle_token_usage)
         sub2 = await self._nc.subscribe("swarm.dredd.correction", cb=self._handle_correction)
-        sub3 = await self._nc.subscribe("swarm.cc.session.completed", cb=self._handle_session_completed)
+        sub3 = await self._nc.subscribe(
+            "swarm.cc.session.completed", cb=self._handle_session_completed
+        )
         self._subs = [sub1, sub2, sub3]
-        logger.info("subscribers.started", subjects=["swarm.usage.tokens", "swarm.dredd.correction", "swarm.cc.session.completed"])
+        logger.info(
+            "subscribers.started",
+            subjects=["swarm.usage.tokens", "swarm.dredd.correction", "swarm.cc.session.completed"],
+        )
 
     async def stop(self) -> None:
         for sub in self._subs:
@@ -79,6 +85,7 @@ class EffectivenessSubscriber:
                 return
 
             from prompt_forge.db.client import get_supabase_client
+
             db = get_supabase_client()
 
             rows = db.select("prompt_effectiveness", filters={"session_uuid": session_uuid})
@@ -112,6 +119,7 @@ class EffectivenessSubscriber:
                 return
 
             from prompt_forge.db.client import get_supabase_client
+
             db = get_supabase_client()
 
             rows = db.select("prompt_effectiveness", filters={"session_uuid": session_ref})
@@ -136,7 +144,9 @@ class EffectivenessSubscriber:
                     updates["outcome_score"] = 0.8
 
             db.update("prompt_effectiveness", row["id"], updates)
-            logger.debug("subscribers.correction_applied", session=session_ref, type=correction_type)
+            logger.debug(
+                "subscribers.correction_applied", session=session_ref, type=correction_type
+            )
         except Exception as e:
             logger.warning("subscribers.correction_error", error=str(e))
 
@@ -150,6 +160,7 @@ class EffectivenessSubscriber:
                 return
 
             from prompt_forge.db.client import get_supabase_client
+
             db = get_supabase_client()
 
             rows = db.select("prompt_effectiveness", filters={"session_uuid": session_id})
@@ -181,6 +192,7 @@ _subscriber: EffectivenessSubscriber | None = None
 
 def get_effectiveness_subscriber() -> EffectivenessSubscriber:
     import os
+
     global _subscriber
     if _subscriber is None:
         nats_url = os.getenv("NATS_URL", "nats://localhost:4222")

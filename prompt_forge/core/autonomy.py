@@ -30,10 +30,9 @@ async def analyse_autonomy_candidates() -> list[dict]:
 
     rows = db.select("prompt_effectiveness")
     recent = [
-        r for r in rows
-        if r.get("created_at", "") >= cutoff
-        and r.get("completed_at")
-        and r.get("agent_id")
+        r
+        for r in rows
+        if r.get("created_at", "") >= cutoff and r.get("completed_at") and r.get("agent_id")
     ]
 
     if not recent:
@@ -51,10 +50,7 @@ async def analyse_autonomy_candidates() -> list[dict]:
             continue
 
         total = len(records)
-        no_intervention = sum(
-            1 for r in records
-            if (r.get("human_interventions") or 0) == 0
-        )
+        no_intervention = sum(1 for r in records if (r.get("human_interventions") or 0) == 0)
         alignment_rate = no_intervention / total
 
         if alignment_rate >= 0.9:
@@ -63,13 +59,15 @@ async def analyse_autonomy_candidates() -> list[dict]:
             if scores:
                 avg_score = sum(scores) / len(scores)
 
-            candidates.append({
-                "agent_id": aid,
-                "session_count": total,
-                "no_intervention_count": no_intervention,
-                "alignment_rate": round(alignment_rate, 4),
-                "avg_outcome_score": round(avg_score, 4) if avg_score is not None else None,
-            })
+            candidates.append(
+                {
+                    "agent_id": aid,
+                    "session_count": total,
+                    "no_intervention_count": no_intervention,
+                    "alignment_rate": round(alignment_rate, 4),
+                    "avg_outcome_score": round(avg_score, 4) if avg_score is not None else None,
+                }
+            )
 
     return candidates
 
@@ -81,6 +79,7 @@ async def publish_autonomy_alerts(candidates: list[dict]) -> int:
 
     try:
         from prompt_forge.core.events import get_event_publisher
+
         publisher = get_event_publisher()
         if not publisher._connected:
             return 0

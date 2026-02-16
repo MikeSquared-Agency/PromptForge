@@ -26,9 +26,7 @@ class TestAnalyseVerbosePrompts:
 
     @pytest.mark.asyncio
     async def test_flags_verbose_version(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.analyser.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.analyser.get_supabase_client", lambda: mock_db)
         # 3 versions: A=3000, B=4000 (median), C=20000 (>2x median=4000 → ratio 5.0)
         self._seed(mock_db, {"version-a": 3000, "version-b": 4000, "version-c": 20000})
         flagged = await analyse_verbose_prompts()
@@ -38,26 +36,20 @@ class TestAnalyseVerbosePrompts:
 
     @pytest.mark.asyncio
     async def test_no_flags_when_similar(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.analyser.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.analyser.get_supabase_client", lambda: mock_db)
         self._seed(mock_db, {"version-a": 5000, "version-b": 6000, "version-c": 5500})
         flagged = await analyse_verbose_prompts()
         assert len(flagged) == 0
 
     @pytest.mark.asyncio
     async def test_empty_data(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.analyser.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.analyser.get_supabase_client", lambda: mock_db)
         flagged = await analyse_verbose_prompts()
         assert flagged == []
 
     @pytest.mark.asyncio
     async def test_single_version_no_flag(self, mock_db, monkeypatch):
-        monkeypatch.setattr(
-            "prompt_forge.core.analyser.get_supabase_client", lambda: mock_db
-        )
+        monkeypatch.setattr("prompt_forge.core.analyser.get_supabase_client", lambda: mock_db)
         self._seed(mock_db, {"version-a": 50000})
         flagged = await analyse_verbose_prompts()
         assert flagged == []

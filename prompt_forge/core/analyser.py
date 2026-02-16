@@ -28,10 +28,9 @@ async def analyse_verbose_prompts() -> list[dict]:
 
     rows = db.select("prompt_effectiveness")
     recent = [
-        r for r in rows
-        if r.get("created_at", "") >= cutoff
-        and r.get("total_tokens")
-        and r.get("version_id")
+        r
+        for r in rows
+        if r.get("created_at", "") >= cutoff and r.get("total_tokens") and r.get("version_id")
     ]
 
     if not recent:
@@ -50,13 +49,15 @@ async def analyse_verbose_prompts() -> list[dict]:
         scores = [r["outcome_score"] for r in records if r.get("outcome_score") is not None]
         avg_tokens = sum(tokens) / len(tokens)
         avg_score = sum(scores) / len(scores) if scores else None
-        version_stats.append({
-            "version_id": vid,
-            "avg_tokens": avg_tokens,
-            "avg_score": avg_score,
-            "session_count": len(records),
-            "prompt_id": records[0].get("prompt_id"),
-        })
+        version_stats.append(
+            {
+                "version_id": vid,
+                "avg_tokens": avg_tokens,
+                "avg_score": avg_score,
+                "session_count": len(records),
+                "prompt_id": records[0].get("prompt_id"),
+            }
+        )
 
     if len(version_stats) < 2:
         return []
@@ -73,15 +74,17 @@ async def analyse_verbose_prompts() -> list[dict]:
     for v in version_stats:
         ratio = v["avg_tokens"] / median_tokens
         if ratio > 2.0:
-            flagged.append({
-                "version_id": v["version_id"],
-                "prompt_id": v["prompt_id"],
-                "avg_tokens": v["avg_tokens"],
-                "median_tokens": median_tokens,
-                "token_ratio": round(ratio, 2),
-                "avg_score": v["avg_score"],
-                "session_count": v["session_count"],
-            })
+            flagged.append(
+                {
+                    "version_id": v["version_id"],
+                    "prompt_id": v["prompt_id"],
+                    "avg_tokens": v["avg_tokens"],
+                    "median_tokens": median_tokens,
+                    "token_ratio": round(ratio, 2),
+                    "avg_score": v["avg_score"],
+                    "session_count": v["session_count"],
+                }
+            )
 
     return flagged
 
@@ -93,6 +96,7 @@ async def publish_verbose_alerts(flagged: list[dict]) -> int:
 
     try:
         from prompt_forge.core.events import get_event_publisher
+
         publisher = get_event_publisher()
         if not publisher._connected:
             return 0

@@ -279,6 +279,7 @@ class UsageStatsResponse(BaseModel):
 
 class EffectivenessCreate(BaseModel):
     """Create an effectiveness tracking record at session spawn."""
+
     session_uuid: str
     prompt_id: UUID | None = None
     version_id: UUID | None = None
@@ -292,6 +293,7 @@ class EffectivenessCreate(BaseModel):
 
 class EffectivenessUpdate(BaseModel):
     """Partial update for token/correction/outcome data."""
+
     input_tokens: int | None = None
     output_tokens: int | None = None
     total_tokens: int | None = None
@@ -305,6 +307,7 @@ class EffectivenessUpdate(BaseModel):
 
 class EffectivenessResponse(BaseModel):
     """Full effectiveness record."""
+
     id: UUID
     prompt_id: UUID | None
     version_id: UUID | None
@@ -330,6 +333,7 @@ class EffectivenessResponse(BaseModel):
 
 class EffectivenessSummary(BaseModel):
     """Aggregated effectiveness stats per prompt version or model."""
+
     group_key: str
     group_value: str
     session_count: int
@@ -343,6 +347,7 @@ class EffectivenessSummary(BaseModel):
 
 class ModelEffectivenessResponse(BaseModel):
     """Per-model-tier correction rates and avg effectiveness."""
+
     economy: EffectivenessSummary | None = None
     standard: EffectivenessSummary | None = None
     premium: EffectivenessSummary | None = None

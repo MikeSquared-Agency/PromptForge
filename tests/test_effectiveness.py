@@ -202,7 +202,7 @@ class TestDiscoveryAccuracy:
                     "model_id": "claude-sonnet-4-5-20250929",
                     "mission_id": "mission-da",
                     "outcome_score": score,
-                    "created_at": f"2026-02-1{i+2}T00:00:00Z",
+                    "created_at": f"2026-02-1{i + 2}T00:00:00Z",
                 },
             )
 
