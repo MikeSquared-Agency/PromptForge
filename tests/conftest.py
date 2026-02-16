@@ -24,11 +24,42 @@ class MockSupabaseClient(SupabaseClient):
             "prompt_usage_log": [],
             "audit_log": [],
             "prompt_subscriptions": [],
+            "persona_prompts": [],
         }
 
     @property
     def client(self):
-        return MagicMock()
+        """Mock the client.table().update().eq() pattern used in persona store."""
+        mock_client = MagicMock()
+        
+        def mock_table(table_name):
+            table_mock = MagicMock()
+            
+            def mock_update(data):
+                update_mock = MagicMock()
+                
+                def mock_eq(column, value):
+                    eq_mock = MagicMock()
+                    
+                    def mock_execute():
+                        # Handle bulk updates for persona_prompts
+                        if table_name == "persona_prompts" and column == "persona":
+                            for row in self._tables.get(table_name, []):
+                                if row.get(column) == value:
+                                    row.update(data)
+                        return MagicMock()
+                    
+                    eq_mock.execute = mock_execute
+                    return eq_mock
+                
+                update_mock.eq = mock_eq
+                return update_mock
+            
+            table_mock.update = mock_update
+            return table_mock
+        
+        mock_client.table = mock_table
+        return mock_client
 
     def insert(self, table: str, data: dict[str, Any]) -> dict[str, Any]:
         record = {
@@ -117,6 +148,9 @@ def app(mock_db):
     from prompt_forge.core.resolver import get_resolver
     from prompt_forge.core.composer import get_composer
     from prompt_forge.db.client import get_supabase_client
+    from prompt_forge.db.persona_store import get_persona_store, PersonaPromptStore
+
+    persona_store = PersonaPromptStore(mock_db)
 
     _app.dependency_overrides[get_registry] = lambda: registry
     _app.dependency_overrides[get_vcs] = lambda: vcs
@@ -124,6 +158,7 @@ def app(mock_db):
     _app.dependency_overrides[get_composer] = lambda: composer
     _app.dependency_overrides[get_supabase_client] = lambda: mock_db
     _app.dependency_overrides[get_audit_logger] = lambda: audit
+    _app.dependency_overrides[get_persona_store] = lambda: persona_store
 
     yield _app
 

@@ -351,3 +351,23 @@ class ModelEffectivenessResponse(BaseModel):
     economy: EffectivenessSummary | None = None
     standard: EffectivenessSummary | None = None
     premium: EffectivenessSummary | None = None
+
+
+# --- Persona Prompts ---
+
+
+class PersonaPromptCreate(BaseModel):
+    """Create a new persona prompt version."""
+
+    template: str = Field(..., min_length=1)
+
+
+class PersonaPromptResponse(BaseModel):
+    """Persona prompt response."""
+
+    id: UUID
+    persona: str
+    version: int
+    template: str
+    is_latest: bool
+    created_at: datetime

@@ -66,3 +66,14 @@ class UsageLogRow(BaseModel):
     outcome: str
     latency_ms: int | None
     feedback: dict[str, Any] | None
+
+
+class PersonaPromptRow(BaseModel):
+    """Row from the persona_prompts table."""
+
+    id: UUID
+    persona: str
+    version: int
+    template: str
+    is_latest: bool
+    created_at: datetime
