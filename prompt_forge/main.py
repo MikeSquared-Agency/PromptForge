@@ -18,6 +18,8 @@ from prompt_forge.utils.logging import setup_logging
 logger = structlog.get_logger()
 
 _cleanup_task = None
+_analyser_task = None
+_autonomy_task = None
 
 
 async def subscription_ttl_cleanup():
@@ -60,18 +62,54 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.info("promptforge.nats_skipped", reason=str(e))
 
+    # Initialize NATS effectiveness subscribers (optional)
+    try:
+        from prompt_forge.core.subscribers import get_effectiveness_subscriber
+
+        subscriber = get_effectiveness_subscriber()
+        if await subscriber.connect():
+            await subscriber.start()
+    except Exception as e:
+        logger.info("promptforge.subscribers_skipped", reason=str(e))
+
     # Start TTL cleanup background task
     _cleanup_task = asyncio.create_task(subscription_ttl_cleanup())
 
+    # Start analyser and autonomy background tasks
+    global _analyser_task, _autonomy_task
+    try:
+        from prompt_forge.core.analyser import run_analyser_loop
+
+        _analyser_task = asyncio.create_task(run_analyser_loop())
+    except Exception as e:
+        logger.info("promptforge.analyser_skipped", reason=str(e))
+
+    try:
+        from prompt_forge.core.autonomy import run_autonomy_loop
+
+        _autonomy_task = asyncio.create_task(run_autonomy_loop())
+    except Exception as e:
+        logger.info("promptforge.autonomy_skipped", reason=str(e))
+
     yield
 
-    # Cancel cleanup task
-    if _cleanup_task:
-        _cleanup_task.cancel()
-        try:
-            await _cleanup_task
-        except asyncio.CancelledError:
-            pass
+    # Cancel background tasks
+    for task in (_cleanup_task, _analyser_task, _autonomy_task):
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    # Disconnect NATS subscribers
+    try:
+        from prompt_forge.core.subscribers import get_effectiveness_subscriber
+
+        subscriber = get_effectiveness_subscriber()
+        await subscriber.stop()
+    except Exception:
+        pass
 
     # Disconnect NATS
     try:

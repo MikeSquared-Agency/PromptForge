@@ -272,3 +272,82 @@ class UsageStatsResponse(BaseModel):
     success_rate: float
     avg_latency_ms: float | None
     version_breakdown: dict[str, int]
+
+
+# --- Effectiveness ---
+
+
+class EffectivenessCreate(BaseModel):
+    """Create an effectiveness tracking record at session spawn."""
+
+    session_uuid: str
+    prompt_id: UUID | None = None
+    version_id: UUID | None = None
+    agent_id: str
+    model_id: str
+    model_tier: str | None = None
+    briefing_hash: str | None = None
+    mission_id: str | None = None
+    task_id: str | None = None
+
+
+class EffectivenessUpdate(BaseModel):
+    """Partial update for token/correction/outcome data."""
+
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_tokens: int | None = None
+    cost_usd: float | None = None
+    correction_count: int | None = None
+    human_interventions: int | None = None
+    outcome: str | None = Field(default=None, pattern=r"^(success|failure|partial|unknown)$")
+    outcome_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    completed_at: datetime | None = None
+
+
+class EffectivenessResponse(BaseModel):
+    """Full effectiveness record."""
+
+    id: UUID
+    prompt_id: UUID | None
+    version_id: UUID | None
+    session_uuid: str
+    mission_id: str | None
+    task_id: str | None
+    agent_id: str
+    model_id: str
+    model_tier: str | None
+    briefing_hash: str | None
+    input_tokens: int | None
+    output_tokens: int | None
+    total_tokens: int | None
+    cost_usd: float | None
+    correction_count: int
+    human_interventions: int
+    outcome: str
+    outcome_score: float | None
+    effectiveness: float | None
+    created_at: datetime
+    completed_at: datetime | None
+
+
+class EffectivenessSummary(BaseModel):
+    """Aggregated effectiveness stats per prompt version or model."""
+
+    group_key: str
+    group_value: str
+    session_count: int
+    avg_tokens: float | None
+    avg_cost_usd: float | None
+    avg_outcome_score: float | None
+    avg_effectiveness: float | None
+    total_corrections: int
+    correction_rate: float | None
+
+
+class ModelEffectivenessResponse(BaseModel):
+    """Per-model-tier correction rates and avg effectiveness."""
+
+    economy: EffectivenessSummary | None = None
+    standard: EffectivenessSummary | None = None
+    premium: EffectivenessSummary | None = None
