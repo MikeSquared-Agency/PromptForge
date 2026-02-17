@@ -72,6 +72,16 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.info("promptforge.subscribers_skipped", reason=str(e))
 
+    # Initialize NATS refinement consumer (optional)
+    try:
+        from prompt_forge.core.refinement.consumer import get_refinement_consumer
+
+        consumer = get_refinement_consumer()
+        if await consumer.connect():
+            await consumer.start()
+    except Exception as e:
+        logger.info("promptforge.refinement_consumer_skipped", reason=str(e))
+
     # Start TTL cleanup background task
     _cleanup_task = asyncio.create_task(subscription_ttl_cleanup())
 
@@ -108,6 +118,15 @@ async def lifespan(app: FastAPI):
 
         subscriber = get_effectiveness_subscriber()
         await subscriber.stop()
+    except Exception:
+        pass
+
+    # Disconnect NATS refinement consumer
+    try:
+        from prompt_forge.core.refinement.consumer import get_refinement_consumer
+
+        consumer = get_refinement_consumer()
+        await consumer.stop()
     except Exception:
         pass
 

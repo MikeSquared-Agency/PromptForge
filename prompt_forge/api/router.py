@@ -10,6 +10,7 @@ from prompt_forge.api.compose import router as compose_router
 from prompt_forge.api.effectiveness import router as effectiveness_router
 from prompt_forge.api.persona_prompts import router as persona_prompts_router
 from prompt_forge.api.prompts import router as prompts_router
+from prompt_forge.api.proposals import router as proposals_router
 from prompt_forge.api.scan import router as scan_router
 from prompt_forge.api.subscriptions import router as subscriptions_router
 from prompt_forge.api.usage import router as usage_router
@@ -20,6 +21,7 @@ api_router = APIRouter()
 api_router.include_router(prompts_router, prefix="/prompts", tags=["prompts"])
 api_router.include_router(versions_router, prefix="/prompts", tags=["versions"])
 api_router.include_router(branches_router, prefix="/prompts", tags=["branches"])
+api_router.include_router(proposals_router, prefix="/prompts", tags=["proposals"])
 api_router.include_router(subscriptions_router, prefix="/prompts", tags=["subscriptions"])
 api_router.include_router(
     persona_prompts_router, prefix="/persona-prompts", tags=["persona-prompts"]
