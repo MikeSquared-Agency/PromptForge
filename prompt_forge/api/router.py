@@ -8,6 +8,7 @@ from prompt_forge.api.audit import router as audit_router
 from prompt_forge.api.branches import router as branches_router
 from prompt_forge.api.compose import router as compose_router
 from prompt_forge.api.effectiveness import router as effectiveness_router
+from prompt_forge.api.experiments import router as experiments_router
 from prompt_forge.api.persona_prompts import router as persona_prompts_router
 from prompt_forge.api.prompts import router as prompts_router
 from prompt_forge.api.proposals import router as proposals_router
@@ -33,3 +34,4 @@ api_router.include_router(scan_router, tags=["scanning"])
 api_router.include_router(audit_router, tags=["audit"])
 api_router.include_router(architect_router, tags=["architect"])
 api_router.include_router(effectiveness_router, tags=["effectiveness"])
+api_router.include_router(experiments_router, prefix="/experiments", tags=["experiments"])

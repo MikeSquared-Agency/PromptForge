@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional, Any
 
+import hashlib
 import structlog
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
@@ -338,6 +339,41 @@ async def get_latest_version(
         keys = [s.strip() for s in sections.split(",")]
         if "content" in version_data and isinstance(version_data["content"], dict):
             version_data["content"] = {k: v for k, v in version_data["content"].items() if k in keys}
+
+    # ── A/B experiment assignment ──────────────────────────────────
+    try:
+        experiments = db.select("experiments", filters={"prompt_slug": slug, "status": "running"})
+    except Exception:
+        experiments = []
+
+    if experiments and x_agent_id:
+        exp = experiments[0]
+        exp_id = str(exp["id"])
+
+        # Check existing assignment
+        assignments = [
+            a for a in db.select("experiment_assignments", filters={"experiment_id": exp_id})
+            if a["agent_id"] == x_agent_id
+        ]
+
+        if assignments:
+            arm = assignments[0]["arm"]
+        else:
+            # Deterministic bucket
+            bucket = int(hashlib.md5(x_agent_id.encode()).hexdigest(), 16) % 100
+            arm = "variant" if bucket < exp["split_pct"] else "control"
+            db.insert("experiment_assignments", {
+                "experiment_id": exp_id,
+                "agent_id": x_agent_id,
+                "arm": arm,
+            })
+
+        # Fetch the appropriate version by ID
+        target_version_id = exp["variant_version"] if arm == "variant" else exp["control_version"]
+        exp_versions = db.select("prompt_versions", filters={"id": target_version_id})
+        if exp_versions:
+            version_data = exp_versions[0]
+            version_data["_experiment_arm"] = arm
 
     return VersionResponse(**version_data)
 
