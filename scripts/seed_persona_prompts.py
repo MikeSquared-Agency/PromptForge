@@ -13,10 +13,10 @@ from prompt_forge.db.persona_store import get_persona_store
 def main():
     """Seed initial persona prompts."""
     print("Seeding initial persona prompts...")
-    
+
     store = get_persona_store()
     store.seed_initial_personas()
-    
+
     print("✅ Initial persona prompts seeded successfully!")
     print("Available personas: researcher, developer, reviewer, tester, architect")
 

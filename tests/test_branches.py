@@ -179,16 +179,18 @@ class TestNewBranchEndpoints:
                 "name": "Branch Diff Test",
                 "type": "persona",
                 "content": {
-                    "sections": [{"id": "identity", "label": "Identity", "content": "Original content"}],
+                    "sections": [
+                        {"id": "identity", "label": "Identity", "content": "Original content"}
+                    ],
                     "variables": {"var1": "value1"},
                     "metadata": {},
                 },
             },
         )
-        
+
         # Create a branch
         client.post("/api/v1/prompts/branch-diff-test/branches", json={"name": "feature"})
-        
+
         # Update the branch with new content
         client.post(
             "/api/v1/prompts/branch-diff-test/versions",
@@ -202,7 +204,7 @@ class TestNewBranchEndpoints:
                 "branch": "feature",
             },
         )
-        
+
         # Test the diff endpoint
         resp = client.get("/api/v1/prompts/branch-diff-test/branches/feature/diff")
         assert resp.status_code == 200
@@ -246,14 +248,14 @@ class TestNewBranchEndpoints:
                 },
             },
         )
-        
+
         # Create a branch
         client.post("/api/v1/prompts/branch-reject-test/branches", json={"name": "unwanted"})
-        
+
         # Reject the branch
         resp = client.post(
             "/api/v1/prompts/branch-reject-test/branches/unwanted/reject",
-            json={"reason": "Not needed anymore"}
+            json={"reason": "Not needed anymore"},
         )
         assert resp.status_code == 200
         data = resp.json()
